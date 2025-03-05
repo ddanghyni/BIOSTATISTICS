@@ -1,6 +1,6 @@
 ---
 title: "git test"
-output: github_document
+output: rmarkdown::github_document
 date: "2025-03-04"
 ---
 
