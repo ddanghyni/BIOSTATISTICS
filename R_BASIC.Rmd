@@ -1,0 +1,13 @@
+---
+title: "R_BASIC"
+author: "KIM SANG HYUN"
+date: "2025-03-05"
+output: rmarkdown::github_document
+---
+
+## BASIC OF R
+
+```{r}
+print("Hello World!")
+```
+
