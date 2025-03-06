@@ -1,0 +1,9 @@
+---
+title: "BS R code file"
+output: rmarkdown::github_document
+---
+
+
+## 오잉?
+
+
