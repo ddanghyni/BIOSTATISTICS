@@ -266,9 +266,9 @@ list1
     ## [1] "p53" "p63" "p73"
     ## 
     ## [[2]]
-    ##            [,1]        [,2]         [,3]       [,4]       [,5]
-    ## [1,] -1.3387973  0.05390235  0.024540353 -0.8972325  0.4032359
-    ## [2,] -0.5221667 -0.27693342 -0.005779396  0.5532961 -1.0253983
+    ##          [,1]       [,2]      [,3]       [,4]       [,5]
+    ## [1,] 1.027538 -0.8438474 0.5693239 -0.4035744  0.6650876
+    ## [2,] 1.503049  0.4081259 0.1107325  0.6628497 -0.3952280
     ## 
     ## [[3]]
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -287,9 +287,9 @@ list2
     ## [1] "p53" "p63" "p73"
     ## 
     ## $geneExpression
-    ##            [,1]       [,2]       [,3]       [,4]      [,5]
-    ## [1,] -0.8249363 -0.1455057  0.0465124 -0.1680225 -0.304108
-    ## [2,] -0.7081666 -0.7934742 -1.2374200 -0.6871642  0.844693
+    ##            [,1]      [,2]       [,3]       [,4]       [,5]
+    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
+    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -334,9 +334,9 @@ list2
     ## [1] "her2" "p63"  "p73" 
     ## 
     ## $geneExpression
-    ##            [,1]       [,2]       [,3]       [,4]      [,5]
-    ## [1,] -0.8249363 -0.1455057  0.0465124 -0.1680225 -0.304108
-    ## [2,] -0.7081666 -0.7934742 -1.2374200 -0.6871642  0.844693
+    ##            [,1]      [,2]       [,3]       [,4]       [,5]
+    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
+    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -345,17 +345,17 @@ list2
 list2[[2]]
 ```
 
-    ##            [,1]       [,2]       [,3]       [,4]      [,5]
-    ## [1,] -0.8249363 -0.1455057  0.0465124 -0.1680225 -0.304108
-    ## [2,] -0.7081666 -0.7934742 -1.2374200 -0.6871642  0.844693
+    ##            [,1]      [,2]       [,3]       [,4]       [,5]
+    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
+    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
 
 ``` r
 list2$geneExpression
 ```
 
-    ##            [,1]       [,2]       [,3]       [,4]      [,5]
-    ## [1,] -0.8249363 -0.1455057  0.0465124 -0.1680225 -0.304108
-    ## [2,] -0.7081666 -0.7934742 -1.2374200 -0.6871642  0.844693
+    ##            [,1]      [,2]       [,3]       [,4]       [,5]
+    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
+    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
 
 ``` r
 list2[[3]]
@@ -676,7 +676,7 @@ str(ALL)
     ##   .. .. .. .. ..@ .Data:List of 1
     ##   .. .. .. .. .. ..$ : int [1:3] 1 0 0
     ##   .. .. .. .. ..$ names: chr "MIAME"
-    ##   ..@ assayData        :<environment: 0x125e3bb38> 
+    ##   ..@ assayData        :<environment: 0x1240ad358> 
     ##   ..@ phenoData        :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
     ##   .. .. ..@ varMetadata      :'data.frame':  21 obs. of  1 variable:
     ##   .. .. .. ..$ labelDescription: chr [1:21] " Patient ID" " Date of diagnosis" " Gender of the patient" " Age of the patient at entry" ...
@@ -915,3 +915,212 @@ hist(x2, col="orange", nclass=50, main="Scaled Expression Data")
 ```
 
 ![](Lecture1_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+
+### golub Data example
+
+``` r
+#BiocManager::install("multtest")
+library(multtest)
+data(golub)
+class(golub)
+```
+
+    ## [1] "matrix" "array"
+
+``` r
+class(golub.cl)
+```
+
+    ## [1] "numeric"
+
+``` r
+length(golub.cl)
+```
+
+    ## [1] 38
+
+``` r
+golub.cl
+```
+
+    ##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1
+
+``` r
+class(golub.gnames)
+```
+
+    ## [1] "matrix" "array"
+
+``` r
+dim(golub.gnames)
+```
+
+    ## [1] 3051    3
+
+``` r
+head(golub.gnames)
+```
+
+    ##      [,1] [,2]                                              
+    ## [1,] "36" "AFFX-HUMISGF3A/M97935_MA_at (endogenous control)"
+    ## [2,] "37" "AFFX-HUMISGF3A/M97935_MB_at (endogenous control)"
+    ## [3,] "38" "AFFX-HUMISGF3A/M97935_3_at (endogenous control)" 
+    ## [4,] "39" "AFFX-HUMRGE/M10098_5_at (endogenous control)"    
+    ## [5,] "40" "AFFX-HUMRGE/M10098_M_at (endogenous control)"    
+    ## [6,] "41" "AFFX-HUMRGE/M10098_3_at (endogenous control)"    
+    ##      [,3]                         
+    ## [1,] "AFFX-HUMISGF3A/M97935_MA_at"
+    ## [2,] "AFFX-HUMISGF3A/M97935_MB_at"
+    ## [3,] "AFFX-HUMISGF3A/M97935_3_at" 
+    ## [4,] "AFFX-HUMRGE/M10098_5_at"    
+    ## [5,] "AFFX-HUMRGE/M10098_M_at"    
+    ## [6,] "AFFX-HUMRGE/M10098_3_at"
+
+``` r
+dim(golub)
+```
+
+    ## [1] 3051   38
+
+``` r
+golub[1:10, 1:5]
+```
+
+    ##           [,1]     [,2]     [,3]     [,4]     [,5]
+    ##  [1,] -1.45769 -1.39420 -1.42779 -1.40715 -1.42668
+    ##  [2,] -0.75161 -1.26278 -0.09052 -0.99596 -1.24245
+    ##  [3,]  0.45695 -0.09654  0.90325 -0.07194  0.03232
+    ##  [4,]  3.13533  0.21415  2.08754  2.23467  0.93811
+    ##  [5,]  2.76569 -1.27045  1.60433  1.53182  1.63728
+    ##  [6,]  2.64342  1.01416  1.70477  1.63845 -0.36075
+    ##  [7,]  3.16885  3.09954  2.99977  3.28898  3.19368
+    ##  [8,]  2.88860  2.95355  2.99977  3.03972  3.21721
+    ##  [9,]  3.22372  3.09954  2.99977  3.34097  3.27515
+    ## [10,]  3.22372  3.09954  2.99977  3.35455  3.27515
+
+``` r
+golub.gnames[1042, ]
+```
+
+    ## [1] "2354"            "CCND3 Cyclin D3" "M92287_at"
+
+``` r
+golub[1042, ]
+```
+
+    ##  [1]  2.10892  1.52405  1.96403  2.33597  1.85111  1.99391  2.06597  1.81649
+    ##  [9]  2.17622  1.80861  2.44562  1.90496  2.76610  1.32551  2.59385  1.92776
+    ## [17]  1.10546  1.27645  1.83051  1.78352  0.45827  2.18119  2.31428  1.99927
+    ## [25]  1.36844  2.37351  1.83485  0.88941  1.45014  0.42904  0.82667  0.63637
+    ## [33]  1.02250  0.12758 -0.74333  0.73784  0.49470  1.12058
+
+``` r
+golubFactor <- factor(golub.cl, levels=0:1,
+                        labels = c("ALL","AML")) # 이런 식으로 factor로 치환하는게 좋다..!
+golubFactor
+```
+
+    ##  [1] ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL
+    ## [20] ALL ALL ALL ALL ALL ALL ALL ALL AML AML AML AML AML AML AML AML AML AML AML
+    ## Levels: ALL AML
+
+``` r
+table(golubFactor)
+```
+
+    ## golubFactor
+    ## ALL AML 
+    ##  27  11
+
+``` r
+golubFactor=="ALL" 
+```
+
+    ##  [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+    ## [13]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+    ## [25]  TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+    ## [37] FALSE FALSE
+
+``` r
+golub[1042, golubFactor == "ALL"]
+```
+
+    ##  [1] 2.10892 1.52405 1.96403 2.33597 1.85111 1.99391 2.06597 1.81649 2.17622
+    ## [10] 1.80861 2.44562 1.90496 2.76610 1.32551 2.59385 1.92776 1.10546 1.27645
+    ## [19] 1.83051 1.78352 0.45827 2.18119 2.31428 1.99927 1.36844 2.37351 1.83485
+
+``` r
+meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
+summary(meanALL)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -1.3310 -0.6143 -0.1210  0.0000  0.4836  3.2786
+
+``` r
+meanAML <- apply(golub[ ,golubFactor=="AML"], 1, mean)
+summary(meanAML)
+```
+
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -1.33086 -0.64593 -0.08616  0.00000  0.51627  3.18971
+
+``` r
+par(mfrow=c(1,2))
+hist(meanALL, col="orange", nclass=50, main="ALL")
+hist(meanAML, col="purple", nclass=50, main="AML")
+```
+
+![](Lecture1_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
+
+``` r
+ALL <- as.numeric(golub[ ,golubFactor=="ALL"])
+AML <- as.numeric(golub[ ,golubFactor=="AML"])
+```
+
+``` r
+par(mfrow=c(1,2))
+hist(ALL, col="orange", nclass=50, main="ALL")
+hist(AML, col="purple", nclass=50, main = "AML")
+```
+
+![](Lecture1_files/figure-gfm/unnamed-chunk-53-1.png)<!-- -->
+
+``` r
+# grep function
+cd33 <- grep("CD33", golub.gnames[ ,2], ignore.case=TRUE)
+cd33
+```
+
+    ## [1] 808
+
+``` r
+golub[cd33, ]
+```
+
+    ##  [1] -0.57277 -1.38539 -0.47039 -0.41469 -0.15402 -1.21719 -1.37386 -0.52956
+    ##  [9] -1.10366 -0.74396 -0.97673 -0.00787 -0.99141 -1.05662 -1.39503 -0.73418
+    ## [17] -0.67921 -0.87388 -0.82569 -1.12953 -0.75991 -0.92231 -1.13505 -1.46474
+    ## [25] -0.59614 -1.04821 -1.23051 -0.38605  0.50814  0.70283  1.05902  0.38602
+    ## [33] -0.19413  1.10560  0.76630  0.48881 -0.13785 -0.40721
+
+``` r
+golub.gnames[cd33, ]
+```
+
+    ## [1] "1834"                                       
+    ## [2] "CD33 CD33 antigen (differentiation antigen)"
+    ## [3] "M23197_at"
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[ ,2], ignore.case=TRUE)
+ccnd3
+```
+
+    ## [1] 1042
+
+``` r
+golub.gnames[ccnd3,]
+```
+
+    ## [1] "2354"            "CCND3 Cyclin D3" "M92287_at"
