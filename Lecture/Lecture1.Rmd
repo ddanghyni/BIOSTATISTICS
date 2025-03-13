@@ -3,8 +3,7 @@ title: "Lecture1"
 output: rmarkdown::github_document
 ---
 
-* 2025-03-11
-
+-   2025-03-11
 
 ### Computing on a data matrix
 
@@ -53,10 +52,10 @@ apply(geneData, 2, mean) # 2 means mean of each column(sample) == col by col
 
 ### Constructing a data frame
 
-* Matrix must have same data type init.
-* But Data frame do not need it
-* 하나의 커럼에서는 똑같은 tpye이 들어가야함.
-* 각 행의 열 수 가 같아야함.
+-   Matrix must have same data type init.
+-   But Data frame do not need it
+-   하나의 커럼에서는 똑같은 tpye이 들어가야함.
+-   각 행의 열 수 가 같아야함.
 
 ```{r}
 patients.df = data.frame(
@@ -73,8 +72,6 @@ nrow(patients.df)
 ncol(patients.df)
 class(patients.df)
 ```
-
-
 
 ### Referencing column vectors in a data frame
 
@@ -101,7 +98,6 @@ row.names(patients.df) = patients.df$patientID
 patients.df[c("101", "103"),]
 ```
 
-
 ```{r}
 patients.df[2] # series
 patients.df[[2]] # values
@@ -112,7 +108,7 @@ patients.df[["treatment"]]
 
 ### Constructing a list
 
-* list는 매우 자유로움!
+-   list는 매우 자유로움!
 
 ```{r}
 list1 <- list(
@@ -140,25 +136,21 @@ list2[["genes"]]
 list2$genes
 ```
 
-
 ```{r}
 list2[[1]][1] <- "her2"
 list2$genes
 list2
 ```
 
-
 ```{r}
 list2[[2]]
 list2$geneExpression
 ```
 
-
 ```{r}
 list2[[3]]
 list2$remission
 ```
-
 
 ### Data path attachment
 
@@ -171,14 +163,12 @@ detach(list2)
 # remission # error
 ```
 
-
 ```{r}
 genes <- c("p53", "p63", "p73")
 attach(list2)
 genes # 우선순위는 기존 객체..
 list2$genes
 ```
-
 
 ```{r}
 patients.df$treatment
@@ -190,20 +180,19 @@ detach(patients.df)
 
 ### Generating factor
 
-* For plotting and testing of hypo we need to generate a **factor**.
+-   For plotting and testing of hypo we need to generate a **factor**.
 
 ```{r}
 gl(3, 5) # gl( # of group, # of element of each group) # factor
 rep(1:3, each = 5) # vector
 ```
 
-* factor type은 범주형 자료라 연산 안됨. (확인해보기)
+-   factor type은 범주형 자료라 연산 안됨. (확인해보기)
 
 ```{r}
 class(gl(3, 5))
 class(rep(1:3, each = 5))
 ```
-
 
 ```{r}
 factor(rep(1:3, each=5)) # same as gl()
@@ -211,7 +200,6 @@ factor(rep(1:3, each=5)) # same as gl()
 A <- factor(rep(1:3, each = 5))
 class(A)
 ```
-
 
 ### Functions
 
@@ -235,13 +223,12 @@ apply(A, 2, fun)
 apply(A, 2, function(x) sum((x-mean(x))^2)/(length(x) - 1))
 ```
 
-* case : more than one argment
+-   case : more than one argment
 
 ```{r}
 fun1 <- function(x, a) sum(x-a)^2/(length(x)-1)
 apply(A, 2, fun1, a=40)
 ```
-
 
 ```{r}
 fun2 <- function(x, a, b) sum(x - a)^2 / b
@@ -277,7 +264,6 @@ mylapply(list(a=2, b = 3), sqrt)
 #BiocManager::install()
 ```
 
-
 ```{r}
 #BiocManager::install("ALL")
 library(ALL)
@@ -289,7 +275,6 @@ data(ALL)
 ALL
 str(ALL)
 ```
-
 
 ```{r}
 class(ALL)
@@ -335,8 +320,7 @@ summary(as.numeric(x)) # 이거 체크 vs summary(x)
 hist(x, col="orange", nclass=50, main="Expression Data")
 ```
 
-
-* scaling 할 때 행은 sample 열은 variable로 설정하기!!!!!!!
+-   scaling 할 때 행은 sample 열은 variable로 설정하기!!!!!!!
 
 ```{r}
 x2 <- scale(x)
@@ -346,21 +330,96 @@ hist(x2, col="orange", nclass=50, main="Scaled Expression Data")
 ```
 
 
+### golub Data example
+
+```{r}
+#BiocManager::install("multtest")
+library(multtest)
+data(golub)
+class(golub)
+```
 
 
+```{r}
+class(golub.cl)
+length(golub.cl)
+golub.cl
+```
 
 
+```{r}
+class(golub.gnames)
+dim(golub.gnames)
+head(golub.gnames)
+```
+
+```{r}
+dim(golub)
+golub[1:10, 1:5]
+```
+
+```{r}
+golub.gnames[1042, ]
+golub[1042, ]
+```
 
 
+```{r}
+golubFactor <- factor(golub.cl, levels=0:1,
+                        labels = c("ALL","AML")) # 이런 식으로 factor로 치환하는게 좋다..!
+golubFactor
+table(golubFactor)
+
+golubFactor=="ALL" 
+golub[1042, golubFactor == "ALL"]
+```
 
 
+```{r}
+meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
+summary(meanALL)
+```
 
 
+```{r}
+meanAML <- apply(golub[ ,golubFactor=="AML"], 1, mean)
+summary(meanAML)
+```
 
 
+```{r}
+par(mfrow=c(1,2))
+hist(meanALL, col="orange", nclass=50, main="ALL")
+hist(meanAML, col="purple", nclass=50, main="AML")
+```
 
 
+```{r}
+ALL <- as.numeric(golub[ ,golubFactor=="ALL"])
+AML <- as.numeric(golub[ ,golubFactor=="AML"])
+```
 
+
+```{r}
+par(mfrow=c(1,2))
+hist(ALL, col="orange", nclass=50, main="ALL")
+hist(AML, col="purple", nclass=50, main = "AML")
+```
+
+```{r}
+# grep function
+cd33 <- grep("CD33", golub.gnames[ ,2], ignore.case=TRUE)
+cd33
+golub[cd33, ]
+golub.gnames[cd33, ]
+```
+
+
+```{r}
+ccnd3 <- grep("CCND3", golub.gnames[ ,2], ignore.case=TRUE)
+ccnd3
+golub.gnames[ccnd3,]
+```
 
 
 

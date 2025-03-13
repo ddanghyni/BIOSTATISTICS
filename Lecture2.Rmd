@@ -1,0 +1,8 @@
+---
+title: "Lecture2"
+author: "KIM SANG HYUN"
+date: "2025-03-13"
+output: html_document
+---
+
+
