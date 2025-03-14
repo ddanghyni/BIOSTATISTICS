@@ -20,7 +20,7 @@ NCI60$data[1:5, 1:10]
 sum(is.na(NCI60$data))
 ```
 
-### 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
+## 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
 
 ```{r}
 sol_1 = function(x = NCI60$data, cell_name = NCI60$labs){
@@ -51,7 +51,7 @@ sol_1 = function(x = NCI60$data, cell_name = NCI60$labs){
 sol_1()
 ```
 
-### 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1~6830)**.
+## 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1~6830)**.
 
 ```{r}
 sol_2 = function(x = NCI60$data){
@@ -119,7 +119,7 @@ sol_3()
 
 
 
-### 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+## 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
 
 ```{r}
 sol_4 = function(){
@@ -140,7 +140,10 @@ sol_4 = function(){
                             filtered_genes[["C"]], 
                             filtered_genes[["D"]]))
 
-  num_overlapped = factor(apply(sapply(filtered_genes, function(g_list) unique_genes %in% g_list), 1, sum), levels = 1:4)
+  num_overlapped = factor(apply(sapply(filtered_genes, 
+                                       function(g_list) {
+                                         unique_genes %in% g_list
+                                         }), 1, sum), levels = 1:4)
 
   sol_df = data.frame(
     x4 = length(num_overlapped[num_overlapped == "4"]),
@@ -161,5 +164,52 @@ sol_4 = function(){
 
 sol_4()
 ```
+
+
+
+### 5. For each gene, compute the pairwise difference in mean expression values among 4 different cancer groups. Note that there are a total of 6 pairs among 4 cancer groups. Which gene and which cancer group pair have the largest difference in mean expression values? You should report the numerical value of the largest difference along with the gene ID number. Also, identify the corresponding cancer group pair that has the largest difference.
+
+
+```{r}
+group_means = sapply(groups, 
+                     function(grp){
+                       colMeans(NCI60$data[cell_group == grp, ])
+                     })
+
+pair = combn(1:4, 2) # col = # of pairs, row = combin of group
+
+group_diffs = apply(pair, 2, # pair goes to arg of func ex. 1/(1, 2), 2/(1, 3)....
+      function(pair){
+        group_means[, pair[1]] - group_means[, pair[2]]
+      })
+
+colnames(group_diffs)=c("A-B", "A-C", "A-D", "B-C", "B-D", "C-D")
+
+ans = which(abs(group_diffs) == max(abs(group_diffs)), arr.ind = TRUE) # arr.ind !!!!
+
+cat("The largest difference is", group_diffs[ans[1, 1], ans[1, 2]], "\n",
+    "ID of Gene:", ans[1, 1], "\n",
+    "Group Pair:", colnames(group_diffs)[ans[1, 2]], "\n")
+
+```
+
+
+### 6. Only 9 different cancer cell lines have at least 2 samples. For each of these 9 cell lines, compute the pairwise distance of expression values between two samples $(i, j)$ s.t $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$ where $x_{ik}$ stands for the gene expression value of the $i$-th sample and the $k$-th gene, and $p=6,830$. Which cell line and two samples have the smallest pairwise distance? Include the nummerical value of the smallest distance with two sample ID number (1 ~ 64) and the name of the corresponding cancer cell line. Note that computation of distance between two samples is limited the same cancer cell line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
