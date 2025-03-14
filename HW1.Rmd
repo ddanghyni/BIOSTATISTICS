@@ -1,0 +1,165 @@
+---
+title: "Biostatistics HomeWork 1"
+author: "KIM SANG HYUN(202211545)"
+date: "2025-03-14"
+output:
+  pdf_document:
+    toc: true
+    latex_engine: xelatex
+---
+
+## 0. Package and Data
+
+```{r}
+library(ISLR)
+data("NCI60")
+unique(NCI60$labs)
+dim(NCI60$data) # row = cancer cell lines(samples), col = gene expression 
+str(NCI60)
+NCI60$data[1:5, 1:10]
+sum(is.na(NCI60$data))
+```
+
+### 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
+
+```{r}
+sol_1 = function(x = NCI60$data, cell_name = NCI60$labs){
+  
+  avg_gene_expr_cancer_cell = apply(x, 1, mean)
+  
+  max_idx = which.max(avg_gene_expr_cancer_cell)
+  min_idx = which.min(avg_gene_expr_cancer_cell)
+  
+  max_cell_name = cell_name[max_idx]
+  min_cell_name = cell_name[min_idx]
+  
+  max_value = avg_gene_expr_cancer_cell[max_idx]
+  min_value = avg_gene_expr_cancer_cell[min_idx]
+  
+  return(
+     list(
+      avg_gene_expr_cancer_cell = avg_gene_expr_cancer_cell,
+      max_cell_name = max_cell_name,
+      max_value = max_value,
+      min_cell_name = min_cell_name,
+      min_value = min_value
+    )
+  )
+  
+}
+
+sol_1()
+```
+
+### 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1~6830)**.
+
+```{r}
+sol_2 = function(x = NCI60$data){
+  
+  avg_gene_expr_gene = apply(x ,2, mean)
+  
+  top_5_max_idx = order(avg_gene_expr_gene, decreasing = TRUE)[1 : 5]
+  top_5_min_idx = order(avg_gene_expr_gene)[1 : 5]
+  
+  top_5_max_gene = avg_gene_expr_gene[top_5_max_idx]
+  top_5_min_gene = avg_gene_expr_gene[top_5_min_idx]
+  
+  return(
+    list(
+      top_5_max_gene = top_5_max_gene,
+      top_5_min_gene = top_5_min_gene
+    )
+  )
+}
+
+sol_2()
+```
+
+## 3. Suppose that group "A" contains "BREAST" and "NSCLC", group "B" has "MELANOMA", "OVARIAN" and "PROSTATE", and group "C" has "LEUKEMIA", "RENAL" and "UNKNOWN". The other 6 cell lines belong to group "D". For each cancer group, compute the mean expression values and the standard deviation of **gene experssion values**.
+
+```{r}
+cell_name = NCI60$labs
+
+# grouping cells
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(cell_name %in% A, "A",
+               ifelse(cell_name %in% B, "B",
+               ifelse(cell_name %in% C, "C", "D")))
+```
+
+
+```{r}
+groups = c("A", "B", "C", "D")
+
+sol_3 = function(x = NCI60$data, group = groups){
+  
+  group_mean = sapply(group, 
+                      function(g) {
+                        mean(x[cell_group == g, ])
+                      })
+  
+  group_sd = sapply(group, 
+                    function(g) {
+                      sd(x[cell_group == g, ])
+                    })
+  
+  list(
+    group_mean = as.data.frame(group_mean),
+    group_sd   = as.data.frame(group_sd)
+  )
+}
+
+sol_3()
+
+```
+
+
+
+
+### 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+
+```{r}
+sol_4 = function(){
+  group_sd = lapply(groups,
+                  function(grp) {
+                    apply(NCI60$data[cell_group == grp, ], 2, sd)
+                  })
+
+  names(group_sd) = c("A", "B", "C", "D")
+
+  filtered_genes = lapply(group_sd,
+                        function(sd_value){
+                          names(sd_value[sd_value < 0.2 | sd_value > 2])
+                        })
+
+  unique_genes = unique(c(filtered_genes[["A"]], 
+                            filtered_genes[["B"]], 
+                            filtered_genes[["C"]], 
+                            filtered_genes[["D"]]))
+
+  num_overlapped = factor(apply(sapply(filtered_genes, function(g_list) unique_genes %in% g_list), 1, sum), levels = 1:4)
+
+  sol_df = data.frame(
+    x4 = length(num_overlapped[num_overlapped == "4"]),
+    x3 = length(num_overlapped[num_overlapped == "3"]),
+    x2 = length(num_overlapped[num_overlapped == "2"]),
+    x1  = length(num_overlapped[num_overlapped == "1"])
+  )
+
+  rownames(sol_df) = "The number of genes"
+  colnames(sol_df) = c("4 groups", "3 groups", "2 groups", "1 groups")
+
+  return(
+    list(
+      filtered_genes = filtered_genes, 
+      sol_df = sol_df
+      ))
+}
+
+sol_4()
+```
+
+
