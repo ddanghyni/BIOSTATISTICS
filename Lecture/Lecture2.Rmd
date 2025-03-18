@@ -1,5 +1,5 @@
 ---
-title: "Lecture2"
+title: "Lecture2. Statistical Test for Genomic Data"
 date: "2025-03-13"
 output: rmarkdown::github_document
 ---
@@ -142,18 +142,144 @@ t.test(x, mu=0, alternative = "greater") # one side test
 t.test(x, mu=0, alternative = "less") # one side test
 ```
 
+```{r}
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+ccnd3
+
+par(mfrow=c(1,2)) 
+stripchart(golub[ccnd3,] ~ golubFactor, method="jitter", cex.lab=1.5, ylab="", vertical = TRUE, col=c("red", "darkgreen"), xlab="Leukemia subtype")
+
+boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype", col=c("purple","green"), ylab="CCND3 (Cyclin D3) Expression")
+```
+
+```{r}
+ALL <- golubFactor=="ALL" 
+t.test(golub[ccnd3, ALL], mu=0) 
+```
+* t = 20.06 존나 큰 값 -> 무조건 기각
+
+```{r}
+t.test(golub[ccnd3, !ALL], mu=0)
+```
+
+* 0.004이라서 기각이긴한데 살짝 부족함.
+
+```{r}
+t.test(golub[ccnd3, ALL], mu=0, alternative="greater")
+```
+
+```{r}
+t.test(golub[ccnd3, !ALL], mu=0, alternative="greater") # two side랑 p-v만 다르다.
+```
+
+
+```{r}
+t.test(golub[ccnd3, !ALL], mu=0, alternative="less")
+t.test(golub[ccnd3, ALL], mu=0, alternative="less")
+```
+
+### Two Sample T-test with Unequal Variances
+
+```{r}
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+ccnd3
+
+par(mfrow=c(1,2)) 
+stripchart(golub[ccnd3,] ~ golubFactor, method="jitter", cex.lab=1.5, ylab="", vertical = TRUE, col=c("red", "darkgreen"), xlab="Leukemia subtype")
+
+boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype", col=c("purple","green"), ylab="CCND3 (Cyclin D3) Expression")
+```
+
+```{r}
+data.frame(golub[ccnd3,], y =golubFactor)
+```
 
 
 
+```{r}
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE) # result = > 두 집단은 다르다~
+```
+
+```{r}
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="greater")
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="less")
+```
+
+### Two Sample T-test with Equal Variances
+
+```{r}
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
+```
+
+### Test for Equal Variances
+
+```{r}
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+zyxin <- grep("Zyxin", golub.gnames[,2], ignore.case=TRUE)
+```
+
+```{r}
+# 각 그룹별 분산의 차이 
+tapply(golub[ccnd3,], golubFactor, var) 
+tapply(golub[zyxin,], golubFactor, var)
+```
 
 
+```{r}
+var.test(golub[ccnd3, ] ~ golubFactor) 
+var.test(golub[zyxin, ] ~ golubFactor) # pooled 못 쓴다..
+```
+
+```{r}
+bartlett.test(golub[ccnd3,] ~ golubFactor) 
+bartlett.test(golub[zyxin,] ~ golubFactor)
+```
+
+```{r}
+fligner.test(golub[ccnd3,], golubFactor) 
+fligner.test(golub[zyxin,], golubFactor)
+```
 
 
+```{r}
+library(car) 
+leveneTest(golub[ccnd3,], golubFactor) 
+leveneTest(golub[zyxin,], golubFactor)
+```
+
+### Histogram and Q-Q plot(정규성 검정)
+
+```{r}
+# histogram
+par(mfrow=c(1,2)) 
+hist(golub[ccnd3, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main=NULL, xlab="CCND3 (Cyclin D3) Expression") 
+hist(golub[zyxin, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main=NULL, xlab="Zyxin Expression")
+```
 
 
+```{r}
+# q-q plot
+par(mfrow=c(1,2)) 
+qqnorm(golub[ccnd3, golubFactor=="ALL"], pch=19, cex.lab=1.5, col="red", main=NULL) 
+qqline(golub[ccnd3, golubFactor=="ALL"]) 
 
+qqnorm(golub[zyxin, golubFactor=="ALL"], pch=19, cex.lab=1.5,col="red", main=NULL) 
+qqline(golub[zyxin, golubFactor=="ALL"])
+```
 
+### Normality Tests
 
+```{r}
+shapiro.test(golub[ccnd3, golubFactor=="ALL"]) 
+shapiro.test(golub[ccnd3, golubFactor=="AML"]) 
+shapiro.test(golub[zyxin, golubFactor=="ALL"]) # reject H_0
+shapiro.test(golub[zyxin, golubFactor=="AML"]) 
+```
+```{r}
+library(nortest) 
+ad.test(golub[ccnd3, golubFactor=="ALL"]) 
+ad.test(golub[zyxin, golubFactor=="ALL"])
+```
 
 
 

@@ -1,4 +1,4 @@
-Lecture2
+Lecture2. Statistical Test for Genomic Data
 ================
 2025-03-13
 
@@ -343,3 +343,449 @@ t.test(x, mu=0, alternative = "less") # one side test
     ## sample estimates:
     ##   mean of x 
     ## 5.37037e-05
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+ccnd3
+```
+
+    ## [1] 1042
+
+``` r
+par(mfrow=c(1,2)) 
+stripchart(golub[ccnd3,] ~ golubFactor, method="jitter", cex.lab=1.5, ylab="", vertical = TRUE, col=c("red", "darkgreen"), xlab="Leukemia subtype")
+
+boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype", col=c("purple","green"), ylab="CCND3 (Cyclin D3) Expression")
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+ALL <- golubFactor=="ALL" 
+t.test(golub[ccnd3, ALL], mu=0) 
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ALL]
+    ## t = 20.06, df = 26, p-value < 2.2e-16
+    ## alternative hypothesis: true mean is not equal to 0
+    ## 95 percent confidence interval:
+    ##  1.699817 2.087948
+    ## sample estimates:
+    ## mean of x 
+    ##  1.893883
+
+- t = 20.06 존나 큰 값 -\> 무조건 기각
+
+``` r
+t.test(golub[ccnd3, !ALL], mu=0)
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, !ALL]
+    ## t = 3.6249, df = 10, p-value = 0.004651
+    ## alternative hypothesis: true mean is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.2449118 1.0262701
+    ## sample estimates:
+    ## mean of x 
+    ## 0.6355909
+
+- 0.004이라서 기각이긴한데 살짝 부족함.
+
+``` r
+t.test(golub[ccnd3, ALL], mu=0, alternative="greater")
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ALL]
+    ## t = 20.06, df = 26, p-value < 2.2e-16
+    ## alternative hypothesis: true mean is greater than 0
+    ## 95 percent confidence interval:
+    ##  1.732853      Inf
+    ## sample estimates:
+    ## mean of x 
+    ##  1.893883
+
+``` r
+t.test(golub[ccnd3, !ALL], mu=0, alternative="greater") # two side랑 p-v만 다르다.
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, !ALL]
+    ## t = 3.6249, df = 10, p-value = 0.002326
+    ## alternative hypothesis: true mean is greater than 0
+    ## 95 percent confidence interval:
+    ##  0.3177962       Inf
+    ## sample estimates:
+    ## mean of x 
+    ## 0.6355909
+
+``` r
+t.test(golub[ccnd3, !ALL], mu=0, alternative="less")
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, !ALL]
+    ## t = 3.6249, df = 10, p-value = 0.9977
+    ## alternative hypothesis: true mean is less than 0
+    ## 95 percent confidence interval:
+    ##       -Inf 0.9533856
+    ## sample estimates:
+    ## mean of x 
+    ## 0.6355909
+
+``` r
+t.test(golub[ccnd3, ALL], mu=0, alternative="less")
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ALL]
+    ## t = 20.06, df = 26, p-value = 1
+    ## alternative hypothesis: true mean is less than 0
+    ## 95 percent confidence interval:
+    ##      -Inf 2.054912
+    ## sample estimates:
+    ## mean of x 
+    ##  1.893883
+
+### Two Sample T-test with Unequal Variances
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+ccnd3
+```
+
+    ## [1] 1042
+
+``` r
+par(mfrow=c(1,2)) 
+stripchart(golub[ccnd3,] ~ golubFactor, method="jitter", cex.lab=1.5, ylab="", vertical = TRUE, col=c("red", "darkgreen"), xlab="Leukemia subtype")
+
+boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype", col=c("purple","green"), ylab="CCND3 (Cyclin D3) Expression")
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
+data.frame(golub[ccnd3,], y =golubFactor)
+```
+
+    ##    golub.ccnd3...   y
+    ## 1         2.10892 ALL
+    ## 2         1.52405 ALL
+    ## 3         1.96403 ALL
+    ## 4         2.33597 ALL
+    ## 5         1.85111 ALL
+    ## 6         1.99391 ALL
+    ## 7         2.06597 ALL
+    ## 8         1.81649 ALL
+    ## 9         2.17622 ALL
+    ## 10        1.80861 ALL
+    ## 11        2.44562 ALL
+    ## 12        1.90496 ALL
+    ## 13        2.76610 ALL
+    ## 14        1.32551 ALL
+    ## 15        2.59385 ALL
+    ## 16        1.92776 ALL
+    ## 17        1.10546 ALL
+    ## 18        1.27645 ALL
+    ## 19        1.83051 ALL
+    ## 20        1.78352 ALL
+    ## 21        0.45827 ALL
+    ## 22        2.18119 ALL
+    ## 23        2.31428 ALL
+    ## 24        1.99927 ALL
+    ## 25        1.36844 ALL
+    ## 26        2.37351 ALL
+    ## 27        1.83485 ALL
+    ## 28        0.88941 AML
+    ## 29        1.45014 AML
+    ## 30        0.42904 AML
+    ## 31        0.82667 AML
+    ## 32        0.63637 AML
+    ## 33        1.02250 AML
+    ## 34        0.12758 AML
+    ## 35       -0.74333 AML
+    ## 36        0.73784 AML
+    ## 37        0.49470 AML
+    ## 38        1.12058 AML
+
+``` r
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE) # result = > 두 집단은 다르다~
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## t = 6.3186, df = 16.118, p-value = 9.871e-06
+    ## alternative hypothesis: true difference in means between group ALL and group AML is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.8363826 1.6802008
+    ## sample estimates:
+    ## mean in group ALL mean in group AML 
+    ##         1.8938826         0.6355909
+
+``` r
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="greater")
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## t = 6.3186, df = 16.118, p-value = 4.935e-06
+    ## alternative hypothesis: true difference in means between group ALL and group AML is greater than 0
+    ## 95 percent confidence interval:
+    ##  0.9107706       Inf
+    ## sample estimates:
+    ## mean in group ALL mean in group AML 
+    ##         1.8938826         0.6355909
+
+``` r
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="less")
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## t = 6.3186, df = 16.118, p-value = 1
+    ## alternative hypothesis: true difference in means between group ALL and group AML is less than 0
+    ## 95 percent confidence interval:
+    ##      -Inf 1.605813
+    ## sample estimates:
+    ## mean in group ALL mean in group AML 
+    ##         1.8938826         0.6355909
+
+### Two Sample T-test with Equal Variances
+
+``` r
+t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
+```
+
+    ## 
+    ##  Two Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## t = 6.7983, df = 36, p-value = 6.046e-08
+    ## alternative hypothesis: true difference in means between group ALL and group AML is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.8829143 1.6336690
+    ## sample estimates:
+    ## mean in group ALL mean in group AML 
+    ##         1.8938826         0.6355909
+
+### Test for Equal Variances
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+zyxin <- grep("Zyxin", golub.gnames[,2], ignore.case=TRUE)
+```
+
+``` r
+# 각 그룹별 분산의 차이 
+tapply(golub[ccnd3,], golubFactor, var) 
+```
+
+    ##       ALL       AML 
+    ## 0.2406642 0.3381806
+
+``` r
+tapply(golub[zyxin,], golubFactor, var)
+```
+
+    ##       ALL       AML 
+    ## 0.5224983 0.1351442
+
+``` r
+var.test(golub[ccnd3, ] ~ golubFactor) 
+```
+
+    ## 
+    ##  F test to compare two variances
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## F = 0.71164, num df = 26, denom df = 10, p-value = 0.4652
+    ## alternative hypothesis: true ratio of variances is not equal to 1
+    ## 95 percent confidence interval:
+    ##  0.2127735 1.8428387
+    ## sample estimates:
+    ## ratio of variances 
+    ##          0.7116441
+
+``` r
+var.test(golub[zyxin, ] ~ golubFactor) # pooled 못 쓴다..
+```
+
+    ## 
+    ##  F test to compare two variances
+    ## 
+    ## data:  golub[zyxin, ] by golubFactor
+    ## F = 3.8662, num df = 26, denom df = 10, p-value = 0.02968
+    ## alternative hypothesis: true ratio of variances is not equal to 1
+    ## 95 percent confidence interval:
+    ##   1.155958 10.011795
+    ## sample estimates:
+    ## ratio of variances 
+    ##           3.866228
+
+``` r
+bartlett.test(golub[ccnd3,] ~ golubFactor) 
+```
+
+    ## 
+    ##  Bartlett test of homogeneity of variances
+    ## 
+    ## data:  golub[ccnd3, ] by golubFactor
+    ## Bartlett's K-squared = 0.42236, df = 1, p-value = 0.5158
+
+``` r
+bartlett.test(golub[zyxin,] ~ golubFactor)
+```
+
+    ## 
+    ##  Bartlett test of homogeneity of variances
+    ## 
+    ## data:  golub[zyxin, ] by golubFactor
+    ## Bartlett's K-squared = 5.036, df = 1, p-value = 0.02483
+
+``` r
+fligner.test(golub[ccnd3,], golubFactor) 
+```
+
+    ## 
+    ##  Fligner-Killeen test of homogeneity of variances
+    ## 
+    ## data:  golub[ccnd3, ] and golubFactor
+    ## Fligner-Killeen:med chi-squared = 0.14115, df = 1, p-value = 0.7071
+
+``` r
+fligner.test(golub[zyxin,], golubFactor)
+```
+
+    ## 
+    ##  Fligner-Killeen test of homogeneity of variances
+    ## 
+    ## data:  golub[zyxin, ] and golubFactor
+    ## Fligner-Killeen:med chi-squared = 7.2671, df = 1, p-value = 0.007023
+
+``` r
+library(car) 
+leveneTest(golub[ccnd3,], golubFactor) 
+```
+
+    ## Levene's Test for Homogeneity of Variance (center = median)
+    ##       Df F value Pr(>F)
+    ## group  1  0.1336 0.7169
+    ##       36
+
+``` r
+leveneTest(golub[zyxin,], golubFactor)
+```
+
+    ## Levene's Test for Homogeneity of Variance (center = median)
+    ##       Df F value   Pr(>F)   
+    ## group  1  9.2119 0.004448 **
+    ##       36                    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+### Histogram and Q-Q plot(정규성 검정)
+
+``` r
+# histogram
+par(mfrow=c(1,2)) 
+hist(golub[ccnd3, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main=NULL, xlab="CCND3 (Cyclin D3) Expression") 
+hist(golub[zyxin, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main=NULL, xlab="Zyxin Expression")
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+``` r
+# q-q plot
+par(mfrow=c(1,2)) 
+qqnorm(golub[ccnd3, golubFactor=="ALL"], pch=19, cex.lab=1.5, col="red", main=NULL) 
+qqline(golub[ccnd3, golubFactor=="ALL"]) 
+
+qqnorm(golub[zyxin, golubFactor=="ALL"], pch=19, cex.lab=1.5,col="red", main=NULL) 
+qqline(golub[zyxin, golubFactor=="ALL"])
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+
+### Normality Tests
+
+``` r
+shapiro.test(golub[ccnd3, golubFactor=="ALL"]) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[ccnd3, golubFactor == "ALL"]
+    ## W = 0.94663, p-value = 0.1774
+
+``` r
+shapiro.test(golub[ccnd3, golubFactor=="AML"]) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[ccnd3, golubFactor == "AML"]
+    ## W = 0.91756, p-value = 0.2989
+
+``` r
+shapiro.test(golub[zyxin, golubFactor=="ALL"]) # reject H_0
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[zyxin, golubFactor == "ALL"]
+    ## W = 0.89198, p-value = 0.00881
+
+``` r
+shapiro.test(golub[zyxin, golubFactor=="AML"]) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[zyxin, golubFactor == "AML"]
+    ## W = 0.96378, p-value = 0.8178
+
+``` r
+library(nortest) 
+ad.test(golub[ccnd3, golubFactor=="ALL"]) 
+```
+
+    ## 
+    ##  Anderson-Darling normality test
+    ## 
+    ## data:  golub[ccnd3, golubFactor == "ALL"]
+    ## A = 0.52154, p-value = 0.1683
+
+``` r
+ad.test(golub[zyxin, golubFactor=="ALL"])
+```
+
+    ## 
+    ##  Anderson-Darling normality test
+    ## 
+    ## data:  golub[zyxin, golubFactor == "ALL"]
+    ## A = 1.013, p-value = 0.009583
