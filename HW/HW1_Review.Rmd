@@ -1,0 +1,467 @@
+---
+title: "Biostatistics HomeWork 1"
+author: "KIM SANG HYUN(202211545)"
+date: "2025-03-14"
+---
+
+## 0. Package and Data
+
+```{r}
+library(ISLR)
+data("NCI60")
+unique(NCI60$labs)
+dim(NCI60$data) # row = cancer cell lines(samples), col = gene expression 
+str(NCI60)
+NCI60$data[1:5, 1:10]
+sum(is.na(NCI60$data))
+```
+
+## 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
+
+1. For each cancer cell line => 각 행의 gen expression values를 구하자.
+2. Identify two cell lines => 가장 크고 작은 cell lines(행)을 찾아라..
+  1. 일단 data에는 우리가 행은 단순 id이고 무슨 cell인지 모름.
+  2. 그게 뭔지 알려면 labs를 써야함.
+3. + 행을 찾고 동시에 values도 구하라.
+
+
+```{r}
+#' 흐름
+#' 1번을 위해서 data에서 각 행을 딱! 뽑아서 mean 박아야하니깐 apply(, 1, )을 하면 되겠쥬?
+avg_gene_expr_cancer_cell = apply(NCI60$data, 1, mean)
+
+#' 그럼 이제 avg_gene_expr에는 64 by 1의 데이터가 생기고 그 행은 cell이고 열은 gene exp value의 mean이 될거고
+#' 그럼 여기서 가장 작은거 그리고 가장 큰걸 뽑아야하쥬?
+#' 바로 생각나는것도 그리고 가장 좋은 방법도 아마도
+#' which.max, which.min을 쓰는 것
+max_indx = which.max(avg_gene_expr_cancer_cell)
+min_indx = which.min(avg_gene_expr_cancer_cell)
+
+#' 이렇게 "인덱스"를 뽑을 수 있음.
+cat(max_indx, min_indx)
+
+#' 이제 이 인덱스를 이용해서 labs에서 뽑으면 되겠지..?
+#' labs의 인덱스하고 data의 인덱스는 element wise하게 connect 되어있으니깐?
+NCI60$labs[c(max_indx, min_indx)]
+
+#' 오케이 이름 뽑았으니깐 value는 avg_gene..에서 우리가 구한 Index를 박으면? 되겠쥬?
+avg_gene_expr_cancer_cell[c(max_indx, min_indx)]
+
+#'가장 큰 작은 인덱스 뽑는 method 생각해보기
+
+#################
+# which.max.min #
+#################
+```
+
+
+```{r}
+sol_1 = function(x = NCI60$data, cell_name = NCI60$labs){
+  
+  avg_gene_expr_cancer_cell = apply(x, 1, mean)
+  
+  max_idx = which.max(avg_gene_expr_cancer_cell)
+  min_idx = which.min(avg_gene_expr_cancer_cell)
+  
+  max_cell_name = cell_name[max_idx]
+  min_cell_name = cell_name[min_idx]
+  
+  max_value = avg_gene_expr_cancer_cell[max_idx]
+  min_value = avg_gene_expr_cancer_cell[min_idx]
+  
+  return(
+     list(
+      avg_gene_expr_cancer_cell = avg_gene_expr_cancer_cell,
+      max_cell_name = max_cell_name,
+      max_value = max_value,
+      min_cell_name = min_cell_name,
+      min_value = min_value
+    )
+  )
+  
+}
+
+sol_1()
+```
+
+## 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1~6830)**.
+
+1. For each gene => 이번엔 열뽑평 (including unknown label이 문장은 왜 있는거누?) => 이번엔 6830 by 1의 데이터가 생기겠쥬?
+2. identify top 5 gene st max min => 앞에서 5개 뒤에서 5개 정렬
+3. ID하고 mean value 뽑
+
+```{r}
+#' 일단 1번 문제와 다르게 열뽑평이니깐 apply(, 2, mean)을 조져주면 된다.
+avg_gen_expr_gene = apply(NCI60$data, 2, mean)
+
+#' dim은 6830 by 1이겠쥬?
+length(avg_gen_expr_gene)
+
+#' 이제 top 5을 찾아야하는데...
+#' sort를 하면 되겠쥬? + decreasing 옵션으로 앞 뒤 5개 indexing 가능하겠쥬?
+max5 = sort(avg_gen_expr_gene, decreasing = TRUE)[1:5]
+min5 = sort(avg_gen_expr_gene, decreasing = FALSE)[1:5
+                                                   ]
+#' 근데 우리는 id하고 값을 같이 출력해야하기 때문에..
+#' sort보단 인덱스를 뽑아주는 order()이 더 편할듯?
+#' order()은 index를 출력 sort()는 value를 출력
+max5_order = order(avg_gen_expr_gene, decreasing = TRUE)[1:5] 
+min5_order = order(avg_gen_expr_gene, decreasing = FALSE)[1:5] 
+avg_gen_expr_gene[c(max5_order, min5_order)]
+
+#####################
+# order() vs sort() #
+#####################
+```
+
+
+
+```{r}
+sol_2 = function(x = NCI60$data){
+  
+  avg_gene_expr_gene = apply(x ,2, mean)
+  
+  top_5_max_idx = order(avg_gene_expr_gene, decreasing = TRUE)[1 : 5]
+  top_5_min_idx = order(avg_gene_expr_gene)[1 : 5]
+  
+  top_5_max_gene = avg_gene_expr_gene[top_5_max_idx]
+  top_5_min_gene = avg_gene_expr_gene[top_5_min_idx]
+  
+  return(
+    list(
+      top_5_max_gene = top_5_max_gene,
+      top_5_min_gene = top_5_min_gene
+    )
+  )
+}
+
+sol_2()
+```
+
+## 3. Suppose that group "A" contains "BREAST" and "NSCLC", group "B" has "MELANOMA", "OVARIAN" and "PROSTATE", and group "C" has "LEUKEMIA", "RENAL" and "UNKNOWN". The other 6 cell lines belong to group "D". For each cancer group, compute the mean expression values and the standard deviation of **gene experssion values**.
+
+1. 문제 꼬라지를 보니깐 group화 하는 거 같은디
+2. labs 데이터 안에 있는 놈들을 대충 a, b, c, d로 그룹핑 하면될듯
+3. 각 그룹별로 Mean와 sd를 구하라.. -> apply() 당근 빳따쥬?
+
+```{r}
+#' 자 일단 grouping 해보자!
+#' 일단 내 머리속을 스치는건 origin data = [........] => 어떤 함수 => grouped data = [.......]가 되게..!
+#' python에선 map으로 조지거나 list compri 쓰면 존나 간단한데..
+#' 생각해보면 기존 데이터를 변형에서 똑같은 크기로 단순 변환하는거잖아
+#' 그럼 ifelse문을 쓰면 되지 않을까?
+#' ifelse(cond, true, false) -> ifelse(A이면, A, 아니면 ifelse(B이면 ,))~~~
+cell_name = NCI60$labs
+
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(cell_name %in% A, "A",
+               ifelse(cell_name %in% B, "B",
+               ifelse(cell_name %in% C, "C", "D")))
+
+#' 만약 ifelse가 생각이 나지않았다?
+#' cell name으로 indexing 하는 방법이 있겠지..?
+
+#################################
+# 이 포맷은 암기 하는 게 좋을듯 #
+#################################
+
+#' 일단 먼저 변환될 리스트를 만들어 길이는 동일하게 지정해야하고 당연히
+#' 근데!! D로 채워 왜? else group D가 있잖슴!!!!
+ex = rep("D", length(cell_name))
+
+# 조건에 따라 그룹 지정
+e[cell_name %in% c("BREAST", "NSCLC")] = "A"
+e[cell_name %in% c("MELANOMA", "OVARIAN", "PROSTATE")] = "B"
+e[cell_name %in% c("LEUKEMIA", "RENAL", "UNKNOWN")] = "C"
+
+#' 또 다른 방법 python의 map과 비슷
+get_group = function(cell) {
+  if (cell %in% c("BREAST", "NSCLC")) {
+    "A"
+  } else if (cell %in% c("MELANOMA", "OVARIAN", "PROSTATE")) {
+    "B"
+  } else if (cell %in% c("LEUKEMIA", "RENAL", "UNKNOWN")) {
+    "C"
+  } else {
+    "D"
+  }
+}
+
+ex_2 = sapply(cell_name, get_group)
+
+################
+# %in$, ifelse #
+################
+```
+
+```{r}
+#' 자 이제 3번 <각 그룹별로 Mean와 sd를 구하라.. -> apply() 당근 빳따쥬?>을 해보자구나
+#' 가장 먼저 뇌를 스치는건 
+mean(NCI60$data[cell_group == "A",])
+mean(NCI60$data[cell_group == "B",]) 
+mean(NCI60$data[cell_group == "C",]) 
+mean(NCI60$data[cell_group == "D",]) 
+
+#' 아주 유인원스럽게 할 수도 있지
+#' 나는 사람이니깐 좀 똑똑하게 해보자..
+#' for문 돌려서 빈리스트에 값을 하나씩 받으면 되지 않을까?
+groups = c("A", "B", "C", "D")
+group_mean_ex = NULL
+counter = 1
+for (group in groups){
+  tmp = mean(NCI60$data[cell_group == group,])
+  group_mean_ex[counter] = tmp
+  counter = counter + 1
+}
+names(group_mean_ex) = groups
+group_mean_ex
+
+#' 근데 이것도 맛이 좀 떨어짐 
+#' for는 무식한 사람만 쓰는거라고 했음(그냥 느려서..)
+#' 우선 최종 output은 각 그룹별 평균이니깐 4 by 1의 Data가 될고임
+#' 반복을하면서 그 결과를 보내줘야함
+#' 오! 그럼 sapply를 쓰면 되겠노!
+ex_mean = sapply(groups, function(groups){
+  mean(NCI60$data[cell_group == groups, ])
+})
+ex_mean
+
+#' 근데 그룹별로 apply하는 방법은 없나,,? Pandas의 groupby처럼,,,
+#' tapply가 있었노 ㅋㅋㅋㅋㅋ 씹련 ㅋㅋㅋ 근데 이놈은 input이 벡터네 ㅅㅂ
+#' by란 미친년이 있었노 ㅋㅋㅋ
+#' 일단 그룹 Index를 기존 데이터에 박아주고
+tmp_data = data.frame(cell_group = cell_group,
+                      NCI60$data)
+
+by(tmp_data[,-1] , cell_group, function(x) mean(as.matrix(x))) # as.matrix(x) 하는 이유
+by(tmp_data[,-1] , cell_group, function(x) sd(as.matrix(x)))
+
+# ^^ㅣ발 기억해두자
+
+```
+
+
+
+```{r}
+cell_name = NCI60$labs
+
+# grouping cells
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(cell_name %in% A, "A",
+               ifelse(cell_name %in% B, "B",
+               ifelse(cell_name %in% C, "C", "D")))
+```
+
+
+```{r}
+groups = c("A", "B", "C", "D")
+
+sol_3 = function(x = NCI60$data, group = groups){
+  
+  group_mean = sapply(group, 
+                      function(g) {
+                        mean(x[cell_group == g, ])
+                      })
+  
+  group_sd = sapply(group, 
+                    function(g) {
+                      sd(x[cell_group == g, ])
+                    })
+  
+  list(
+    group_mean = as.data.frame(group_mean),
+    group_sd   = as.data.frame(group_sd)
+  )
+}
+
+sol_3()
+
+```
+
+
+## 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+
+1. sample sd???? 그냥 sd랑 다른건가..?
+2. 이번엔 행별이 아닌 열별로 그룹 sd
+3. 열 하나 뽑꼬 gene1 = [a, a, b, c]이면 gene1에서 [a =[] , b = [], c=[]] 이렇게
+4. 그럼 데이터가 6830 by 4가 나오겠지?
+
+```{r}
+#' 열 하나 뽑꼬 gene1 = [a, a, b, c]이면 gene1에서 [a =[] , b = [], c=[]] 이렇게
+#' 그럼 데이터가 6830 by 4가 나오겠지?
+
+tmp = by(tmp_data[,-1], cell_group, function(x) apply(x, 2, sd))
+
+tmp_outlier = lapply(tmp, function(tmp){
+  names(tmp[tmp < 0.2 | tmp> 2])
+})
+
+tmp_unique_genes = unique(c(tmp_outlier[["A"]], 
+                            tmp_outlier[["B"]], 
+                            tmp_outlier[["C"]], 
+                            tmp_outlier[["D"]]))
+sol = NULL
+counter = 1
+num = 0
+#' uni에서 하나 뽑고 tmp[['G']]랑 하나하나 비교 
+for (i in tmp_unique_genes){
+  num = 0
+  for (j in groups){
+    if(i %in% tmp_outlier[[j]]){
+      num = num + 1
+    }
+  }
+  sol[counter] = num
+  counter = counter + 1
+}
+
+table(factor(sol, levels = 1:4))
+
+
+tmp_sol = sapply(tmp_unique_genes, function(gene) {
+  sum(sapply(groups, function(gr) gene %in% tmp_outlier[[gr]])) # sum()에는 logical vector가 있겠주?
+})
+
+table(factor(tmp_sol, levels = 1:4))
+
+```
+
+
+
+```{r}
+sol_4 = function(){
+  group_sd = lapply(groups,
+                  function(grp) {
+                    apply(NCI60$data[cell_group == grp, ], 2, sd)
+                  })
+
+  names(group_sd) = c("A", "B", "C", "D")
+
+  filtered_genes = lapply(group_sd,
+                        function(sd_value){
+                          names(sd_value[sd_value < 0.2 | sd_value > 2])
+                        })
+
+  unique_genes = unique(c(filtered_genes[["A"]], 
+                            filtered_genes[["B"]], 
+                            filtered_genes[["C"]], 
+                            filtered_genes[["D"]]))
+
+  num_overlapped = factor(apply(sapply(filtered_genes, 
+                                       function(g_list) {
+                                         unique_genes %in% g_list
+                                         }), 1, sum), levels = 1:4)
+
+  sol_df = data.frame(
+    x4 = length(num_overlapped[num_overlapped == "4"]),
+    x3 = length(num_overlapped[num_overlapped == "3"]),
+    x2 = length(num_overlapped[num_overlapped == "2"]),
+    x1  = length(num_overlapped[num_overlapped == "1"])
+  )
+
+  rownames(sol_df) = "The number of genes"
+  colnames(sol_df) = c("4 groups", "3 groups", "2 groups", "1 groups")
+
+  return(
+    list(
+      filtered_genes = filtered_genes, 
+      sol_df = sol_df
+      ))
+}
+
+sol_4()
+```
+
+
+
+## 5. For each gene, compute the pairwise difference in mean expression values among 4 different cancer groups. Note that there are a total of 6 pairs among 4 cancer groups. Which gene and which cancer group pair have the largest difference in mean expression values? You should report the numerical value of the largest difference along with the gene ID number. Also, identify the corresponding cancer group pair that has the largest difference.
+
+
+```{r}
+group_means = sapply(groups, 
+                     function(grp){
+                       colMeans(NCI60$data[cell_group == grp, ])
+                     })
+
+pair = combn(1:4, 2) # col = # of pairs, row = combin of group
+
+group_diffs = apply(pair, 2, # pair goes to arg of func ex. 1/(1, 2), 2/(1, 3)....
+      function(pair){
+        group_means[, pair[1]] - group_means[, pair[2]]
+      })
+
+colnames(group_diffs)=c("A-B", "A-C", "A-D", "B-C", "B-D", "C-D")
+
+ans = which(abs(group_diffs) == max(abs(group_diffs)), arr.ind = TRUE) # arr.ind !!!!
+
+cat("The largest difference is", group_diffs[ans[1, 1], ans[1, 2]], "\n",
+    "ID of Gene:", ans[1, 1], "\n",
+    "Group Pair:", colnames(group_diffs)[ans[1, 2]], "\n")
+
+```
+
+
+## 6. Only 9 different cancer cell lines have at least 2 samples. For each of these 9 cell lines, compute the pairwise distance of expression values between two samples $(i, j)$ s.t $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$ where $x_{ik}$ stands for the gene expression value of the $i$-th sample and the $k$-th gene, and $p=6,830$. Which cell line and two samples have the smallest pairwise distance? Include the nummerical value of the smallest distance with two sample ID number (1 ~ 64) and the name of the corresponding cancer cell line. Note that computation of distance between two samples is limited the same cancer cell line.
+
+```{r}
+filter_cell = names(table(NCI60$labs)[table(NCI60$labs) >= 2])
+
+compr = Inf
+ans_samples = NULL
+ans_cell = NULL
+
+for(cell in filter_cell){
+  
+  cell_id = which(NCI60$labs == cell)
+  
+  if(length(cell_id) >= 2){
+    
+    for(i in 1:(length(cell_id) - 1)){
+      
+      for(j in (i + 1):length(cell_id)){
+        
+        dist_cell = sqrt(sum((NCI60$data[cell_id[i], ] - NCI60$data[cell_id[j], ])^2))
+        
+        if(dist_cell < compr){
+          
+          compr = dist_cell
+          
+          ans_samples = c(cell_id[i], cell_id[j])
+          
+          ans_cell = cell
+        }
+      }
+      
+    }
+  }
+}
+
+cat("Smallest dist:", compr, "\n",
+    "Sample ID:", ans_samples, "\n",
+    "Name of cancer cell line:", ans_cell)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
