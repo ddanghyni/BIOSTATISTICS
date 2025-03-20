@@ -789,3 +789,429 @@ ad.test(golub[zyxin, golubFactor=="ALL"])
     ## 
     ## data:  golub[zyxin, golubFactor == "ALL"]
     ## A = 1.013, p-value = 0.009583
+
+### Outliers Test
+
+``` r
+library(outliers)
+grubbs.test(golub[ccnd3, golubFactor=="ALL"])
+```
+
+    ## 
+    ##  Grubbs test for one outlier
+    ## 
+    ## data:  golub[ccnd3, golubFactor == "ALL"]
+    ## G = 2.92639, U = 0.65796, p-value = 0.0183
+    ## alternative hypothesis: lowest value 0.45827 is an outlier
+
+``` r
+grubbs.test(golub[zyxin, golubFactor=="ALL"])
+```
+
+    ## 
+    ##  Grubbs test for one outlier
+    ## 
+    ## data:  golub[zyxin, golubFactor == "ALL"]
+    ## G = 1.63480, U = 0.89326, p-value = 1
+    ## alternative hypothesis: lowest value -1.47649 is an outlier
+
+### Binomial Test
+
+``` r
+sum(dbinom(18:22, 22, 0.7)) # d => pdf value
+```
+
+    ## [1] 0.1645488
+
+``` r
+1 - pbinom(17, 22, 0.7) # p => cdf
+```
+
+    ## [1] 0.1645488
+
+``` r
+binom.test(18, 22, p=0.7, alternative="greater", conf.level=0.95)
+```
+
+    ## 
+    ##  Exact binomial test
+    ## 
+    ## data:  18 and 22
+    ## number of successes = 18, number of trials = 22, p-value = 0.1645
+    ## alternative hypothesis: true probability of success is greater than 0.7
+    ## 95 percent confidence interval:
+    ##  0.6309089 1.0000000
+    ## sample estimates:
+    ## probability of success 
+    ##              0.8181818
+
+### Chi-squared Test
+
+``` r
+library(ape) 
+obs <- table(read.GenBank(c("X94991.1"),as.character=TRUE)) 
+obs
+```
+
+    ## X94991.1
+    ##   a   c   g   t 
+    ## 410 789 573 394
+
+``` r
+e <- rep(sum(obs)/4, 4) 
+e
+```
+
+    ## [1] 541.5 541.5 541.5 541.5
+
+``` r
+test <- sum((obs-e)^2/e) 
+test
+```
+
+    ## [1] 187.0674
+
+``` r
+1-pchisq(test, 3) 
+```
+
+    ## [1] 0
+
+``` r
+qchisq(0.95, 3)
+```
+
+    ## [1] 7.814728
+
+``` r
+chisq.test(obs)
+```
+
+    ## 
+    ##  Chi-squared test for given probabilities
+    ## 
+    ## data:  obs
+    ## X-squared = 187.07, df = 3, p-value < 2.2e-16
+
+``` r
+pi <- c(0.75,0.25) 
+x <- c(5474, 1850) 
+chisq.test(x, p=pi)
+```
+
+    ## 
+    ##  Chi-squared test for given probabilities
+    ## 
+    ## data:  x
+    ## X-squared = 0.26288, df = 1, p-value = 0.6081
+
+``` r
+data(golub, package = "multtest") 
+golubFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML")) 
+gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE)
+```
+
+``` r
+x <- golub[gdf5, ] 
+cutoff <- 0.1 
+pred <- ifelse(x < cutoff, "ALL", "AML") 
+data.frame(predicted=pred, true=golubFactor) 
+```
+
+    ##    predicted true
+    ## 1        AML  ALL
+    ## 2        ALL  ALL
+    ## 3        AML  ALL
+    ## 4        ALL  ALL
+    ## 5        ALL  ALL
+    ## 6        ALL  ALL
+    ## 7        AML  ALL
+    ## 8        AML  ALL
+    ## 9        ALL  ALL
+    ## 10       ALL  ALL
+    ## 11       ALL  ALL
+    ## 12       ALL  ALL
+    ## 13       ALL  ALL
+    ## 14       ALL  ALL
+    ## 15       ALL  ALL
+    ## 16       AML  ALL
+    ## 17       ALL  ALL
+    ## 18       AML  ALL
+    ## 19       ALL  ALL
+    ## 20       ALL  ALL
+    ## 21       ALL  ALL
+    ## 22       ALL  ALL
+    ## 23       AML  ALL
+    ## 24       ALL  ALL
+    ## 25       AML  ALL
+    ## 26       ALL  ALL
+    ## 27       AML  ALL
+    ## 28       ALL  AML
+    ## 29       ALL  AML
+    ## 30       AML  AML
+    ## 31       ALL  AML
+    ## 32       ALL  AML
+    ## 33       AML  AML
+    ## 34       ALL  AML
+    ## 35       AML  AML
+    ## 36       ALL  AML
+    ## 37       AML  AML
+    ## 38       AML  AML
+
+``` r
+table(predicted=pred, true=golubFactor)
+```
+
+    ##          true
+    ## predicted ALL AML
+    ##       ALL  18   6
+    ##       AML   9   5
+
+``` r
+chisq.test(table(pred, golubFactor))
+```
+
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+
+    ## 
+    ##  Pearson's Chi-squared test with Yates' continuity correction
+    ## 
+    ## data:  table(pred, golubFactor)
+    ## X-squared = 0.11005, df = 1, p-value = 0.7401
+
+``` r
+cutoff <- sort(x) 
+pval <- 0
+```
+
+``` r
+for (i in 1:length(cutoff)) { 
+  pred <- ifelse(x < cutoff[i], "ALL", "AML") 
+  pval[i] <- chisq.test(table(pred, golubFactor))$p.val 
+  }
+```
+
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+
+``` r
+plot(cutoff, pval, type="p", pch=20, ylab="pvalues") 
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+
+``` r
+cutoff[pval < 0.05]
+```
+
+    ## [1] -0.6839
+
+``` r
+pred <- ifelse(x < cutoff[1], "ALL", "AML") 
+table(predicted=pred, true=golubFactor)
+```
+
+    ##          true
+    ## predicted ALL AML
+    ##       AML  27  11
+
+``` r
+boxplot(x ~ golubFactor, cex.lab=1.5, main=NULL, 
+        xlab="Leukemia subtype", col=c("lightblue", "orange"))
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+
+<hr>
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
+x2 <- golub[ccnd3, ]
+```
+
+``` r
+cutoff <- sort(x2) 
+pval2 <- 0 
+for (i in 1:length(cutoff)) {
+  pred2 <- ifelse(x2 < cutoff[i], "ALL", "AML")
+  pval2[i] <- chisq.test(table(pred2, golubFactor))$p.val 
+}
+```
+
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+    ## Warning in chisq.test(table(pred2, golubFactor)): Chi-squared approximation may
+    ## be incorrect
+
+``` r
+plot(cutoff, pval2, type="p", pch=20, ylab="pvalues") 
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+``` r
+cutoff[pval2 < 0.05]
+```
+
+    ##  [1] -0.74333  0.45827  0.63637  0.73784  0.82667  0.88941  1.02250  1.10546
+    ##  [9]  1.12058  1.27645  1.32551  1.36844  1.45014  1.52405  1.78352  1.80861
+    ## [17]  1.81649  1.83051  1.83485  1.85111  1.90496  1.92776  1.96403  1.99391
+    ## [25]  1.99927
+
+``` r
+boxplot(x2 ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype", 
+        col=c("lightblue", "orange")) 
+abline(h=cutoff[pval2 < 0.05], lty=2, col="gray")
+```
+
+![](Lecture2_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
+
+### Fisher’s Exact Test
+
+``` r
+data <- matrix(c(300,500,3000,7000), 2, byrow=TRUE) 
+fisher.test(data)
+```
+
+    ## 
+    ##  Fisher's Exact Test for Count Data
+    ## 
+    ## data:  data
+    ## p-value = 1.336e-05
+    ## alternative hypothesis: true odds ratio is not equal to 1
+    ## 95 percent confidence interval:
+    ##  1.201492 1.629240
+    ## sample estimates:
+    ## odds ratio 
+    ##   1.399977
