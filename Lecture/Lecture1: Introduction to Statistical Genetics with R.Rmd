@@ -1,6 +1,8 @@
 ---
 title: "Lecture1: Introduction to Statistical Genetics with R"
-output: rmarkdown::github_document
+output:
+  github_document:
+    toc: yes
 ---
 
 -   2025-03-11

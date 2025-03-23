@@ -1,7 +1,9 @@
 ---
 title: "Lecture2 : Statistical Test for Genomic Data"
 date: "2025-03-13"
-output: rmarkdown::github_document
+output: 
+  github_document:
+    toc: yes
 ---
 
 ### Required Packages
@@ -19,6 +21,31 @@ output: rmarkdown::github_document
 ```
 
 
+### Statistical Hypothesis Testing
+
+* Sample data 만든 후 그 data에서 **sample statistic** 계산 조진다.
+* 그 다음 우리는 **Null huypothesis**가 **true**라 가정한다잉!
+* 그 다음 $H_0$의 distribution에서 sample statistic의 위치(?)를 본다.
+* 우리는 지금 $H_0$가 true라고 가정을 했기 때문에 sample data에서 나온 ST가 $H_0$의 distribution에 잘 맞아야한다.
+* 여기서 잘 맞아야한다라는 뜻은 그 ST가 터무니 없는 확률로 나온다면 안된다는 뜻이다.
+* 이때 그 확률을 우리는 **p-value**라고 한다.
+* 그리고 우리는 $H_0$가 true일떄 $H_0$를 reject할 허용 오차를 significance level $\alpha$라고 한다.
+
+> p-value가 0.05일 때, 만약 $H_0$가 True일 때 관측된 결과(ST)가 우연히 나타날 확률이 50%이다! 라는 느낌! 즉 $\alpha = 0.05$는 내가 관측한 값이 우연히 나타날 확률이 0.05 보단 작아선 안된다! 라는 threshold를 setting 한 느낌!
+
+* 핵심은 sample statistic의 distribution을 알아야 한다!!!
+
+### The Z-test
+
+* 현실에선 쓸 일 없음 ㅋㅋㅋㅋㅋ
+* 왜? 모표준편차를 어케아노..
+
+* Under the Null
+
+$$
+ H_0: \mu = 0 \quad \text{vs} \quad H_1: \mu \neq 0
+$$
+
 ```{r}
 library(multtest)
 library(nortest)
@@ -33,14 +60,14 @@ library(genetics)
 library(multtest)
 
 data(golub, package = "multtest")
-  golubFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML"))
+
+golubFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML"))
   
 x <- golub[2058, golubFactor=="ALL"]
 
 n <- length(x)
 
 sigma <- 0.25; mu0 <- 0
-
 z.value <- sqrt(n)*(mean(x) - mu0)/sigma
 
 2*pnorm(-abs(z.value)) # p-value
@@ -71,7 +98,9 @@ text(0, 0.23, "Acceptance")
 text(0, 0.20, "Region")
 ```
 
-### Confidence Interval
+#### Confidence Interval
+
+* If we were to repeat the procedure thousands of times, we are 95% certain that the true mean falls in the confidence interval -> 이게 핵심!
 
 ```{r}
 mean(x) + qnorm(0.025) * sigma/sqrt(n)
@@ -81,6 +110,11 @@ mean(x) + c(-1, 1) * qnorm(0.975) * sigma / sqrt(n)
 
 
 ### One sample T-test
+
+* 모집단의 분산(표준편차)을 모르고, 표본이 **정규성을 만족한다고 가정**할 때 사용한다.
+* 이때 검정 통계량은 t 분포를 따르고 t분포는 degree of freedom에 따라 모양이 달라진다.
+* 모집단의 분산 대신 표본의 구한 표본분산을 이용하기 때문에 정규분포가 아닌 t 분포를 따르게 된다.(자세한 증명은 수통 때)
+
 
 ```{r}
 f <- function(x) dt(x, 5)
@@ -112,8 +146,26 @@ mtext(expression(t[0.025]), side=1, at=-qt5, col="red")
 mtext(expression(t[0.975]), side=1, at=qt5, col="red")
 ```
 
+#### R에서 분포와 관련된 함수 정리 
+
 ```{r}
-qt(0.975, 5)
+#' d : 확률밀도함수
+#' 특정 분포의 확률밀도값 또는 확률질량값을 계산
+dnorm(0, mean = 0, sd = 1)
+
+#' p : 누적분포함수
+#' 특정 분포에서 어떤 값 q 이하가 나올 확률을 계산
+pnorm(0, mean = 0, sd = 1)
+
+#' q : 분위수함수
+#' 누적분포함수의 반대 개념으로, 누적확률 p에 해당하는 값을 계산
+qnorm(0.975, mean = 0, sd = 1)
+qnorm(0.5, mean = 0, sd = 1)
+
+#' r : 난수생성
+#' 특정 분포를 따르는 난수를 n개 생성하여 벡터로 반환
+rnorm(10, mean = 0, sd = 1)
+
 ```
 
 ```{r}
@@ -136,13 +188,41 @@ alpha <- 0.05
 mean(x) + c(qt(alpha/2, n-1), qt(1-alpha/2, n-1)) * sd(x)/sqrt(n)
 ```
 
+#### One Sample T-test를 위한 R function : `t.test(data= , mu= , alternative = )`
+
 ```{r}
 t.test(x, mu=0) # default two side test
+```
+
+$$
+H_1: \mu > 0
+$$
+
+```{r}
+#' mu를 기준으로 p-v는 오른쪽 부분 싸악 
 t.test(x, mu=0, alternative = "greater") # one side test
+```
+
+$$
+H_1: \mu < 0
+$$
+
+```{r}
+#' mu를 기준으로 p-v는 왼쪽 부분 싸악 
 t.test(x, mu=0, alternative = "less") # one side test
 ```
 
+
+#### Example of One sample T-test
+
+* Using a box-and-whiskers plot and a side-by-side plot, we can investigate the range of the ALL and AML gene expression values of CCND3 (CyclinD3), which are collected in row 1042 of the data matrix golub.
+
+> 그니깐 CCND3 gene에서 ALL vs AML을 하자.
+
+
+
 ```{r}
+# gred()으로 CCND3 gene의 index 찾기
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
 ccnd3
 
@@ -154,9 +234,12 @@ boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subt
 
 ```{r}
 ALL <- golubFactor=="ALL" 
+
+#' CCND3 gene에서 ALL로 검정을 하자..
+#' H_0 = mu에 대한 가설검정 
 t.test(golub[ccnd3, ALL], mu=0) 
 ```
-* t = 20.06 존나 큰 값 -> 무조건 기각
+* t = 20.06 존나 큰 값 -> 무조건 기각 즉! ALL의 평균 값이 0이 아니다라고 할 수 있다.
 
 ```{r}
 t.test(golub[ccnd3, !ALL], mu=0)
@@ -178,7 +261,15 @@ t.test(golub[ccnd3, !ALL], mu=0, alternative="less")
 t.test(golub[ccnd3, ALL], mu=0, alternative="less")
 ```
 
-### Two Sample T-test with Unequal Variances
+### Two Sample T-test with Unequal Variances(welch's t-test)
+
+* 두 그룹의 평균을 비교할 때 사용한다.
+* Two Sample T test를 진행하기 위해선
+  1. 각 그룹 샘플에 대한 정규성 검정 실시
+  2. Equal variance에 대한 검정 실시
+    1. 분산이 같다면 pooled t-test를 실시
+    2. 같지 않다면 welch's t-test를 실시(general version)
+  3. 그 다음 상황에 맞는 t test를 진행한다.
 
 ```{r}
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -194,11 +285,13 @@ boxplot(golub[ccnd3,] ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subt
 data.frame(golub[ccnd3,], y =golubFactor)
 ```
 
-
+#### R Function for Unequal Variances in two sample t-test : t.test(data ~ groupfactor, var.equal = FALSE)
 
 ```{r}
 t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE) # result = > 두 집단은 다르다~
 ```
+
+* From the result, we can say that the data provide strong evidence that the population means do differ.
 
 ```{r}
 t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="greater")
@@ -207,11 +300,17 @@ t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="less")
 
 ### Two Sample T-test with Equal Variances
 
+* 두 집단의 분산에 대한 검정 결과로 $H_0$를 기각하지 못하면 즉, 두 집단의 분산이 같으면 **pooled sample variance**를 이용한 **pooled t-test**를 실시.
+
+#### `t.test(data ~ groupFactor, var.equal=TRUE)
+
 ```{r}
 t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
 ```
 
 ### Test for Equal Variances
+
+* F 분포로 조지는 놈!
 
 ```{r}
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -225,10 +324,14 @@ tapply(golub[zyxin,], golubFactor, var)
 ```
 
 
+#### R function for variance test : `var.test(data~groupFactor)`
+
 ```{r}
-var.test(golub[ccnd3, ] ~ golubFactor) 
-var.test(golub[zyxin, ] ~ golubFactor) # pooled 못 쓴다..
+var.test(golub[ccnd3, ] ~ golubFactor) # 두 그룹의 분산이 같다고 할 수 있다->pooled 이용
+var.test(golub[zyxin, ] ~ golubFactor) # 두 그룹의 부산이 같다고 할 수 없다->pooled 못 쓴다.. welch's 이용
 ```
+
+* 분산에 대한 검정은 F검정 말고도 여러 종류가 있다! 참고!!
 
 ```{r}
 bartlett.test(golub[ccnd3,] ~ golubFactor) 
@@ -246,6 +349,8 @@ library(car)
 leveneTest(golub[ccnd3,], golubFactor) 
 leveneTest(golub[zyxin,], golubFactor)
 ```
+
+* 여기까지 복습 완료
 
 ### Histogram and Q-Q plot(정규성 검정)
 
