@@ -1,9 +1,16 @@
-Lecture1
+Lecture1: Introduction to Statistical Genetics with R
 ================
 
 - 2025-03-11
 
 ### Computing on a data matrix
+
+- In bioinformatics, gene expression values (from several groups of
+  patients) are stored as rows such that each row contains the
+  expression values of all the patients for a particular gene and each
+  column contains all the gene expression values for a particular person
+
+> 열이 각 gene이고 행이 각 sample, value는 gene expression.
 
 ``` r
 gene1 = c(1.00, 1.50, 1.25)
@@ -23,7 +30,7 @@ genes
     ##  [1]  1.00  1.50  1.25  1.35  1.55  1.00 -1.10 -1.50 -1.25 -1.20 -1.30 -1.00
 
 ``` r
-geneData = matrix(genes, nrow=4, ncol=3, byrow=TRUE) # !byrow!
+geneData = matrix(genes, nrow=4, ncol=3, byrow=TRUE) # !byrow! -> 벡터를 행으로 박기
 geneData
 ```
 
@@ -48,6 +55,8 @@ geneData
 ``` r
 # t(geneData)
 ```
+
+> 여기에선 각 col이 sample이 되고 각 row는 gene name이 된다.
 
 ``` r
 # data를 받고 제일 처음 해야할 것.
@@ -109,8 +118,10 @@ apply(geneData, 2, mean) # 2 means mean of each column(sample) == col by col
 
 - Matrix must have same data type init.
 - But Data frame do not need it
-- 하나의 커럼에서는 똑같은 tpye이 들어가야함.
-- 각 행의 열 수 가 같아야함.
+- 하나의 컬럼에서는 똑같은 tpye이 들어가야함.
+- 각 행의 열 수가 같아야함.
+- It consists of a list of column vectors of equal length, where the
+  data in each column must be of the same type.
 
 ``` r
 patients.df = data.frame(
@@ -266,9 +277,9 @@ list1
     ## [1] "p53" "p63" "p73"
     ## 
     ## [[2]]
-    ##          [,1]       [,2]      [,3]       [,4]       [,5]
-    ## [1,] 1.027538 -0.8438474 0.5693239 -0.4035744  0.6650876
-    ## [2,] 1.503049  0.4081259 0.1107325  0.6628497 -0.3952280
+    ##           [,1]       [,2]       [,3]       [,4]      [,5]
+    ## [1,] -1.447266 -0.4360188 -0.7343333 -0.5147505 0.4573311
+    ## [2,]  1.397924 -0.3565781  1.1079585  1.0580280 1.4537042
     ## 
     ## [[3]]
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -288,8 +299,8 @@ list2
     ## 
     ## $geneExpression
     ##            [,1]      [,2]       [,3]       [,4]       [,5]
-    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
-    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
+    ## [1,] -1.6935724 -1.262009 -2.4700473 0.27056039 -0.7080682
+    ## [2,] -0.2960806 -1.843611  0.2829127 0.04561342  0.2841204
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -335,8 +346,8 @@ list2
     ## 
     ## $geneExpression
     ##            [,1]      [,2]       [,3]       [,4]       [,5]
-    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
-    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
+    ## [1,] -1.6935724 -1.262009 -2.4700473 0.27056039 -0.7080682
+    ## [2,] -0.2960806 -1.843611  0.2829127 0.04561342  0.2841204
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -346,16 +357,16 @@ list2[[2]]
 ```
 
     ##            [,1]      [,2]       [,3]       [,4]       [,5]
-    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
-    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
+    ## [1,] -1.6935724 -1.262009 -2.4700473 0.27056039 -0.7080682
+    ## [2,] -0.2960806 -1.843611  0.2829127 0.04561342  0.2841204
 
 ``` r
 list2$geneExpression
 ```
 
     ##            [,1]      [,2]       [,3]       [,4]       [,5]
-    ## [1,] -1.1197318 0.3551385 0.04653895 -0.0014056 -0.1508779
-    ## [2,] -0.7531468 1.8370909 2.72602589  0.7649114 -0.9739013
+    ## [1,] -1.6935724 -1.262009 -2.4700473 0.27056039 -0.7080682
+    ## [2,] -0.2960806 -1.843611  0.2829127 0.04561342  0.2841204
 
 ``` r
 list2[[3]]
@@ -435,6 +446,7 @@ detach(patients.df)
 - For plotting and testing of hypo we need to generate a **factor**.
 
 ``` r
+?gl
 gl(3, 5) # gl( # of group, # of element of each group) # factor
 ```
 
@@ -557,7 +569,7 @@ matrix(1:6, 2, 3)
     ## [2,]    2    4    6
 
 ``` r
-lapply(matrix(1:6, 2, 3), function(x) x^2)
+lapply(matrix(1:6, 2, 3), function(x) x^2) # 각 원소가 함수로 들어가서 lapply이므로 output으로 list로 출력된다.
 ```
 
     ## [[1]]
@@ -676,7 +688,7 @@ str(ALL)
     ##   .. .. .. .. ..@ .Data:List of 1
     ##   .. .. .. .. .. ..$ : int [1:3] 1 0 0
     ##   .. .. .. .. ..$ names: chr "MIAME"
-    ##   ..@ assayData        :<environment: 0x1240ad358> 
+    ##   ..@ assayData        :<environment: 0x11dcfe720> 
     ##   ..@ phenoData        :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
     ##   .. .. ..@ varMetadata      :'data.frame':  21 obs. of  1 variable:
     ##   .. .. .. ..$ labelDescription: chr [1:21] " Patient ID" " Date of diagnosis" " Gender of the patient" " Age of the patient at entry" ...
@@ -865,7 +877,12 @@ table(ALL$BT)
     ##  5 19 36 23 12  5  1 15 10  2
 
 ``` r
+#' ALL$BT에서 T0_4까지를 BT로 변환을 위한 작업
+#' 다음 코드를 실행하면 T/F의 Logical vector가 생성된다.
 BT <- ALL$BT %in% c("T", "T1", "T2", "T3", "T4")
+
+#' as.numeric(BT)를 해서 T/F 값을 0, 1로 변환
+#' 그 다음 label을 설정해서 0 -> B 1 -> T로 factor 변환
 y <- factor(as.numeric(BT), labels=c("B", "T")) # logical로 처리
 table(y)
 ```
@@ -983,7 +1000,7 @@ dim(golub)
     ## [1] 3051   38
 
 ``` r
-golub[1:10, 1:5]
+golub[1:10, 1:5] # row -> samples , col = genes
 ```
 
     ##           [,1]     [,2]     [,3]     [,4]     [,5]
@@ -1050,7 +1067,14 @@ golub[1042, golubFactor == "ALL"]
     ## [19] 1.83051 1.78352 0.45827 2.18119 2.31428 1.99927 1.36844 2.37351 1.83485
 
 ``` r
+# 각 sample(row)에 대한 ALL gene expression value의 mean
 meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
+length(meanALL)
+```
+
+    ## [1] 3051
+
+``` r
 summary(meanALL)
 ```
 
@@ -1086,8 +1110,24 @@ hist(AML, col="purple", nclass=50, main = "AML")
 
 ![](Lecture1_files/figure-gfm/unnamed-chunk-53-1.png)<!-- -->
 
+### `grep()`
+
+- We are interested in the properties of certain genes.
+
+- For instance, **gene CD33** plays an important role in distinguishing
+  lymphoid from myeloid lineage cells.
+
+- To perform computations on the expressions of this gene **we need to
+  know its row index**.
+
+> grep 함수는 지정한 문자열(“CD33”)이 포함된 요소를 찾기 위해 사용, 이
+> 코드는 golub.gnames 객체의 두 번째 열에서 “CD33”이라는 문자열을
+> (대소문자 구분 없이) 검색하고, 그 문자열이 포함된 행의 인덱스를
+> 반환하여 변수 cd33에 저장.
+
 ``` r
-# grep function
+#' grep function
+#' ignore.case: TRUE로 설정하면 대소문자 구분 없이 검색
 cd33 <- grep("CD33", golub.gnames[ ,2], ignore.case=TRUE)
 cd33
 ```
@@ -1124,3 +1164,13 @@ golub.gnames[ccnd3,]
 ```
 
     ## [1] "2354"            "CCND3 Cyclin D3" "M92287_at"
+
+> 즉 조건을 만족하지 않는 행의 인덱스를 찾고 싶다면, grep 함수의 invert
+> 옵션을 사용
+
+``` r
+not_cd33 <- grep("CD33", golub.gnames[,2], ignore.case=TRUE, invert=TRUE)
+```
+
+>     in python
+>     df[df['column'].str.contains("CD33", case=False)] 

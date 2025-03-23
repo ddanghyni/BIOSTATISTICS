@@ -1,11 +1,15 @@
 ---
-title: "Lecture1"
+title: "Lecture1: Introduction to Statistical Genetics with R"
 output: rmarkdown::github_document
 ---
 
 -   2025-03-11
 
 ### Computing on a data matrix
+
+* In bioinformatics, gene expression values (from several groups of patients) are stored as rows such that each row contains the expression values of all the patients for a particular gene and each column contains all the gene expression values for a particular person
+
+> 열이 각 gene이고 행이 각 sample, value는 gene expression.
 
 ```{r}
 gene1 = c(1.00, 1.50, 1.25)
@@ -21,7 +25,7 @@ genes
 ```
 
 ```{r}
-geneData = matrix(genes, nrow=4, ncol=3, byrow=TRUE) # !byrow!
+geneData = matrix(genes, nrow=4, ncol=3, byrow=TRUE) # !byrow! -> 벡터를 행으로 박기
 geneData
 ```
 
@@ -31,6 +35,8 @@ colnames(geneData) = c("Eric", "Peter", "Anna")
 geneData
 # t(geneData)
 ```
+
+> 여기에선 각 col이 sample이 되고 각 row는 gene name이 된다.
 
 ```{r}
 # data를 받고 제일 처음 해야할 것.
@@ -54,8 +60,9 @@ apply(geneData, 2, mean) # 2 means mean of each column(sample) == col by col
 
 -   Matrix must have same data type init.
 -   But Data frame do not need it
--   하나의 커럼에서는 똑같은 tpye이 들어가야함.
--   각 행의 열 수 가 같아야함.
+-   하나의 컬럼에서는 똑같은 tpye이 들어가야함.
+-   각 행의 열 수가 같아야함.
+-   It consists of a list of column vectors of equal length, where the data in each column must be of the same type.
 
 ```{r}
 patients.df = data.frame(
@@ -67,11 +74,14 @@ patients.df = data.frame(
 patients.df
 ```
 
+
+
 ```{r}
 nrow(patients.df)
 ncol(patients.df)
 class(patients.df)
 ```
+
 
 ### Referencing column vectors in a data frame
 
@@ -183,6 +193,7 @@ detach(patients.df)
 -   For plotting and testing of hypo we need to generate a **factor**.
 
 ```{r}
+?gl
 gl(3, 5) # gl( # of group, # of element of each group) # factor
 rep(1:3, each = 5) # vector
 ```
@@ -241,7 +252,7 @@ list(a=2, b=3)
 lapply(list(a=2, b=3), sqrt) # 각각의 원소마다 적용하라..
 
 matrix(1:6, 2, 3)
-lapply(matrix(1:6, 2, 3), function(x) x^2)
+lapply(matrix(1:6, 2, 3), function(x) x^2) # 각 원소가 함수로 들어가서 lapply이므로 output으로 list로 출력된다.
 ```
 
 ```{r}
@@ -307,7 +318,12 @@ table(ALL$BT)
 ```
 
 ```{r}
+#' ALL$BT에서 T0_4까지를 BT로 변환을 위한 작업
+#' 다음 코드를 실행하면 T/F의 Logical vector가 생성된다.
 BT <- ALL$BT %in% c("T", "T1", "T2", "T3", "T4")
+
+#' as.numeric(BT)를 해서 T/F 값을 0, 1로 변환
+#' 그 다음 label을 설정해서 0 -> B 1 -> T로 factor 변환
 y <- factor(as.numeric(BT), labels=c("B", "T")) # logical로 처리
 table(y)
 ```
@@ -315,6 +331,7 @@ table(y)
 ```{r}
 x <- t(exprs(ALL))
 dim(x)
+
 summary(as.numeric(x)) # 이거 체크 vs summary(x)
 
 hist(x, col="orange", nclass=50, main="Expression Data")
@@ -355,7 +372,7 @@ head(golub.gnames)
 
 ```{r}
 dim(golub)
-golub[1:10, 1:5]
+golub[1:10, 1:5] # row -> samples , col = genes
 ```
 
 ```{r}
@@ -376,7 +393,9 @@ golub[1042, golubFactor == "ALL"]
 
 
 ```{r}
+# 각 sample(row)에 대한 ALL gene expression value의 mean
 meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
+length(meanALL)
 summary(meanALL)
 ```
 
@@ -406,8 +425,19 @@ hist(ALL, col="orange", nclass=50, main="ALL")
 hist(AML, col="purple", nclass=50, main = "AML")
 ```
 
+### `grep()`
+
+* We are interested in the properties of certain genes.
+
+* For instance, **gene CD33** plays an important role in distinguishing lymphoid from myeloid lineage cells.
+
+* To perform computations on the expressions of this gene **we need to know its row index**.
+
+> grep 함수는 지정한 문자열("CD33")이 포함된 요소를 찾기 위해 사용, 이 코드는 golub.gnames 객체의 두 번째 열에서 "CD33"이라는 문자열을 (대소문자 구분 없이) 검색하고, 그 문자열이 포함된 행의 인덱스를 반환하여 변수 cd33에 저장.
+
 ```{r}
-# grep function
+#' grep function
+#' ignore.case: TRUE로 설정하면 대소문자 구분 없이 검색
 cd33 <- grep("CD33", golub.gnames[ ,2], ignore.case=TRUE)
 cd33
 golub[cd33, ]
@@ -421,10 +451,17 @@ ccnd3
 golub.gnames[ccnd3,]
 ```
 
+> 즉 조건을 만족하지 않는 행의 인덱스를 찾고 싶다면, grep 함수의 invert 옵션을 사용
+
+```{r}
+not_cd33 <- grep("CD33", golub.gnames[,2], ignore.case=TRUE, invert=TRUE)
+```
 
 
-
-
+> ```
+in python
+df[df['column'].str.contains("CD33", case=False)] 
+```
 
 
 
