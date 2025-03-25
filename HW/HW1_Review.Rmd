@@ -84,6 +84,30 @@ sol_1 = function(x = NCI60$data, cell_name = NCI60$labs){
 sol_1()
 ```
 
+
+
+```{r}
+rm(list = ls())
+
+library(ISLR)
+data(NCI60)
+unique(NCI60$labs)
+dim(NCI60$data)
+NCI60$labs
+#1
+exprsmeans1 <- apply(NCI60$data,1,mean)
+exprsmeans1
+c(min(exprsmeans1),max(exprsmeans1))
+c(which.max(exprsmeans1),which.min(exprsmeans1))
+A1 <- list(
+  meanValue = c(min(exprsmeans1),max(exprsmeans1)),
+  CellLines = c(which.max(exprsmeans1),which.min(exprsmeans1)),
+  CellLinesname = NCI60$labs[c(which.max(exprsmeans1),which.min(exprsmeans1))]
+)
+A1
+```
+
+
 ## 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1\~6830)**.
 
 1.  For each gene =\> 이번엔 열뽑평 (including unknown label이 문장은 왜 있는거누?) =\> 이번엔 6830 by 1의 데이터가 생기겠쥬?

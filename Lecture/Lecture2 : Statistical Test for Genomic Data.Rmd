@@ -319,6 +319,7 @@ zyxin <- grep("Zyxin", golub.gnames[,2], ignore.case=TRUE)
 
 ```{r}
 # 각 그룹별 분산의 차이 
+#' tapply 안에는 벡터나 배열 자료형이 들어간다.
 tapply(golub[ccnd3,], golubFactor, var) 
 tapply(golub[zyxin,], golubFactor, var)
 ```
@@ -350,9 +351,13 @@ leveneTest(golub[ccnd3,], golubFactor)
 leveneTest(golub[zyxin,], golubFactor)
 ```
 
-* 여기까지 복습 완료
+
 
 ### Histogram and Q-Q plot(정규성 검정)
+
+* Various procedures are available **to test the hypothesis that a dataset is normally distributed**. Many statistical tests including T-test and F-test require normality assumption.
+
+
 
 ```{r}
 # histogram
@@ -361,6 +366,8 @@ hist(golub[ccnd3, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main
 hist(golub[zyxin, golubFactor=="ALL"], cex.lab=1.5, col="orange",nclass=20, main=NULL, xlab="Zyxin Expression")
 ```
 
+
+#### R function for q-q ploting : `qqnorm() & qqpline()`
 
 ```{r}
 # q-q plot
@@ -372,7 +379,16 @@ qqnorm(golub[zyxin, golubFactor=="ALL"], pch=19, cex.lab=1.5,col="red", main=NUL
 qqline(golub[zyxin, golubFactor=="ALL"])
 ```
 
+
 ### Normality Tests
+
+$$
+H_0 : \text{정규성을 따른다..!}
+$$
+
+* Normality Tests는 각 집단 별로 다해야한다!!! -> 베리 중요
+
+#### R function for Normality Test
 
 ```{r}
 shapiro.test(golub[ccnd3, golubFactor=="ALL"]) 
@@ -388,24 +404,97 @@ ad.test(golub[zyxin, golubFactor=="ALL"])
 
 ### Outliers Test
 
+* gene expression values가 not normally distributed 할 때 outlier들이 있을 확률이 매우 높다.
+
+$$
+H_0 : \text{Does not contain an outlier}
+$$
+
+* 이상치 검정을 위해 Grubbs test를 진행!
+
+
+
 ```{r}
 library(outliers)
 grubbs.test(golub[ccnd3, golubFactor=="ALL"])
 grubbs.test(golub[zyxin, golubFactor=="ALL"])
 ```
 
+* 이상값이 있거나 분포가 크게 왜곡된 경우, 순위 기반(비모수) 검정, 강건추정(robust estimation) 기법 등이 대안 
 
 ### Binomial Test
+
+* **이항분포 기반 가설검정**은 특정 사건이 일어날 확률 $p$가 이론적으로 가정된 값 $p_0$와 같은지를 통계적으로 검정
+* 예 : 어떤 microRNA 서열에서 퓨린이 나타날 확률을 $p_0$라고 가정하고, **실제로 관측된** 퓨린 비율이 $p_0$와 다른지 판단.
+
+> 어떤 연구에서 길이 22nt의 microRNA가 있다고 하자.
+> 이 microRNA 서열에서 퓨린이 **실제로 18개** 관측되었다.
+> 나는 "이 microRNA에서 퓨린이 나타날 확률이 $p_0 = 0.7$ 이상일 것이다!" 라는 가설을 세웠다.
+
+$$
+H_0 : p = 0.7
+$$
+
+$$
+H_1 : p \gt 0.7
+$$
+
+> 그럼 p-value는 다음과 같이 계산된다. 
+
+$$
+p\text{-value} \;=\; P(X \ge 18)
+\;=\; \sum_{x=18}^{22} \binom{22}{x} \,(0.7)^{x} \,(0.3)^{22 - x}
+$$
+
+> 등호 넣는게 매우 중요하다..!
 
 ```{r}
 sum(dbinom(18:22, 22, 0.7)) # d => pdf value
 1 - pbinom(17, 22, 0.7) # p => cdf
+```
 
+
+#### R function for binomtest : `binon.test()`
+
+```{r}
 binom.test(18, 22, p=0.7, alternative="greater", conf.level=0.95)
 ```
 
+
+
+
 ### Chi-squared Test
 
+* 카이제곱 검정은 **범주형 자료의 빈도분포**가 특정 이론적 분포와 일치하는지, 혹인 범주형 변수들이 서로 독립적인지를 평가하기 위한 검정 방법이다.
+
+1. 적합도 검정
+  * 표본에서 관측된 범주별 빈도 분포가, 연구자가 가정한 분포와 같은지를 검정
+  * 예: A, C, G, T가 동일 확률(각 1/4)로 나타나는지 여부 확인
+  
+$$
+H_0 : (\pi_1,...,\pi_m) = (p_1,...,p_m)
+$$
+
+2. 독립성 검정
+  * 두 범주형 변수가 서로 독립인지를 검정
+  * 질병 유전자형과 임상 그룹이 독립인지, 혹은 연관이 있는지 
+  
+* 기본 아이디어
+1. 관측도수(Observed count) : $o_i$
+  * 범주 $i$에서 **실제로 관측된 빈도**(개수)
+  
+2. 기대도수(Expected count) : $e_i$
+  * 귀무가설이 참일 때, 범주 $i$에서 기대되는 또는 이론적으로 예측되는 빈도
+  * 예를 들어, 총 표본 크기를 $n$이라 하고, 각 범주에 대한 가정 확률(이론 확률 $p_0$ 느낌)을 $p_1,..,p_m$이라 한다면,
+  
+$$
+e_i = np_i
+$$
+  
+3.검정방법
+
+* 카이제곱 검정통계량을 구하고 $q$ 해당하는 p=value가 유의수준보다 작으면 귀무가설을 기각.
+  
 ```{r}
 library(ape) 
 obs <- table(read.GenBank(c("X94991.1"),as.character=TRUE)) 
@@ -413,7 +502,7 @@ obs
 ```
 
 ```{r}
-e <- rep(sum(obs)/4, 4) 
+e <- rep(sum(obs)/4, 4) # n(전체 수) * 1/4 (p_i)
 e
 ```
 
@@ -438,6 +527,35 @@ pi <- c(0.75,0.25)
 x <- c(5474, 1850) 
 chisq.test(x, p=pi)
 ```
+#### Confusion Matrix (46쪽 필기)
+
+* 가로축(열, True)에는 실제 참값(‘진짜’ 레이블), 세로축(행, Predict)에는 예측한 레이블
+
+* 예: 백혈병 데이터에서 실제 유형(ALL, AML)과 모델이 예측한 유형(ALL, AML)을 2×2 표로 정리
+
+  * TP (True Positive): 실제가 ALL이고, 예측도 ALL
+
+  * TN (True Negative): 실제가 AML이고, 예측도 AML
+
+  * FP (False Positive): 실제가 AML인데 ALL로 잘못 예측
+
+  * FN (False Negative): 실제가 ALL인데 AML로 잘못 예측
+  
+#### Testing Indepnedence
+
+1. Cutoff 설정: 유전자 발현값이나 어떤 점수 등에 임의의 임계값을 정해, 이를 기준으로 예측
+2. Confusion matrix 구성
+3. 독립성 검정 수행 
+
+$$
+H_0 : \text{cutoff 쓰레기}
+$$
+
+$$
+H_1 : \text{성능 좋노!}
+$$
+
+
 
 ```{r}
 data(golub, package = "multtest") 
