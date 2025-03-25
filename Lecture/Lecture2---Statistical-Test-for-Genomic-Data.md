@@ -21,6 +21,7 @@ Lecture2 : Statistical Test for Genomic Data
 - [Hardy Weinberg Equilibrium](#hardy-weinberg-equilibrium)
 - [Asthma SNP Data](#asthma-snp-data)
 - [Permutation Test](#permutation-test)
+- [Confidence Interval](#confidence-interval-1)
 
 ### Required Packages
 
@@ -357,8 +358,8 @@ qnorm(0.5, mean = 0, sd = 1)
 rnorm(10, mean = 0, sd = 1)
 ```
 
-    ##  [1]  1.6446336 -1.6708713 -0.9310695  1.2524890  1.2716434  0.4835831
-    ##  [7]  0.4161751  1.5212197 -0.2270921  1.2719273
+    ##  [1]  0.5188326 -0.4821449  1.0971736 -1.2533204 -0.3272178 -0.7101282
+    ##  [7]  0.6434584  0.3618996 -1.6408793 -0.3779476
 
 ``` r
 x <- golub[2058, golubFactor=="ALL"]
@@ -1897,7 +1898,7 @@ summary(snp1)
     ##  296  758  514   10
 
 ``` r
-table(snp1)
+table(snp1) # c is major and g is minor
 ```
 
     ## snp1
@@ -1907,8 +1908,8 @@ table(snp1)
 ``` r
 ObsCount <- table(snp1) 
 Nobs <- sum(ObsCount) 
-FreqC <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
-ExpCount <- c(Nobs*(1-FreqC)^2, 2*Nobs*FreqC*(1-FreqC), Nobs*FreqC^2) 
+FreqG <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
+ExpCount <- c(Nobs*(1-FreqG)^2, 2*Nobs*FreqG*(1-FreqG), Nobs*FreqG^2) 
 rbind(ObsCount, ExpCount)
 ```
 
@@ -1964,7 +1965,7 @@ HWE.chisq(Snp1)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 0.31202, df = NA, p-value = 0.5996
+    ## X-squared = 0.31202, df = NA, p-value = 0.6062
 
 ``` r
 country <- asthma$country 
@@ -2009,7 +2010,7 @@ HWE.chisq(Snp1bg)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 1.6915, df = NA, p-value = 0.07439
+    ## X-squared = 1.6915, df = NA, p-value = 0.07319
 
 ``` r
 HWE.exact(Snp1bg)
@@ -2250,7 +2251,7 @@ abline(v=abs(tobs), col=4, lty=2, lwd=2)
 text(abs(tobs)-1, 350, col=4, paste("|T| = ", round(abs(tobs), 4), sep=""))
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-70-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
 
 ``` r
 gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE) 
@@ -2272,4 +2273,6 @@ abline(v=abs(tobs2), col=4, lty=2, lwd=2)
 text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
+
+### Confidence Interval

@@ -689,14 +689,14 @@ lapply(asthma[,-c(1:6)], table)
 snp1 <- asthma$rs2274276 
 class(snp1) 
 summary(snp1) 
-table(snp1)
+table(snp1) # c is major and g is minor
 ```
 
 ```{r}
 ObsCount <- table(snp1) 
 Nobs <- sum(ObsCount) 
-FreqC <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
-ExpCount <- c(Nobs*(1-FreqC)^2, 2*Nobs*FreqC*(1-FreqC), Nobs*FreqC^2) 
+FreqG <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
+ExpCount <- c(Nobs*(1-FreqG)^2, 2*Nobs*FreqG*(1-FreqG), Nobs*FreqG^2) 
 rbind(ObsCount, ExpCount)
 ```
 
@@ -777,7 +777,10 @@ T[1:100]
 mean(abs(T) > abs(tobs))
 (sum(abs(T) > abs(tobs))+1)/(K+1) 
 1/(K+1)
+```
 
+
+```{r}
 hist(T, breaks=100, col="orange", main="", xlim=c(-7, 7), xlab="Null Distribution of Test Statistic")
 x0 <- seq(-7, 7, len=1000) 
 y0 <- dnorm(seq(-7, 7, len=1000)) 
@@ -794,7 +797,10 @@ fun2 <- function(t) t.test(golub[gdf5,]~t, var.equal=FALSE)$stat
 T2 <- apply(per.y, 2, fun2) 
 tobs2 <- t.test(golub[gdf5,] ~ golubFactor, var.equal=FALSE)$stat 
 (sum(abs(T2) > abs(tobs2))+1)/(K+1)
+```
 
+
+```{r}
 hist(T2, breaks=100, col="orange", main="", xlab="Null Distribution of Test Statistic") 
 x0 <- seq(min(T2), max(T2), len=1000) 
 y0 <- dnorm(seq(min(T2), max(T2), len=1000)) 
@@ -803,6 +809,8 @@ abline(v=-abs(tobs2), col=4, lty=2, lwd=2)
 abline(v=abs(tobs2), col=4, lty=2, lwd=2) 
 text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 ```
+
+### Confidence Interval
 
 
 
