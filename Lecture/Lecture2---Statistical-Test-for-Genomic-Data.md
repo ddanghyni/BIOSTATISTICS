@@ -18,6 +18,9 @@ Lecture2 : Statistical Test for Genomic Data
 - [Binomial Test](#binomial-test)
 - [Chi-squared Test](#chi-squared-test)
 - [Fisher’s Exact Test](#fishers-exact-test)
+- [Hardy Weinberg Equilibrium](#hardy-weinberg-equilibrium)
+- [Asthma SNP Data](#asthma-snp-data)
+- [Permutation Test](#permutation-test)
 
 ### Required Packages
 
@@ -354,8 +357,8 @@ qnorm(0.5, mean = 0, sd = 1)
 rnorm(10, mean = 0, sd = 1)
 ```
 
-    ##  [1]  0.50212108 -0.04515434  0.31344887 -2.22696218 -0.57619314 -1.52139785
-    ##  [7]  1.04620382  0.44609716  1.28256121 -1.19263575
+    ##  [1]  1.6446336 -1.6708713 -0.9310695  1.2524890  1.2716434  0.4835831
+    ##  [7]  0.4161751  1.5212197 -0.2270921  1.2719273
 
 ``` r
 x <- golub[2058, golubFactor=="ALL"]
@@ -1172,11 +1175,11 @@ chisq.test(x, p=pi)
 3.  독립성 검정 수행
 
 $$
-H_0 : \text{cutoff 쓰레기}
+H_0 : \text{cutoff 쓰레기, 실제 레이블과 예측 레이블이 독립이다.}
 $$
 
 $$
-H_1 : \text{성능 좋노!}
+H_1 : \text{성능 좋노!, 실제 레이블과 예측 레이블이 연관이 있다.}
 $$
 
 ``` r
@@ -1187,7 +1190,11 @@ gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE)
 
 ``` r
 x <- golub[gdf5, ] 
+
+# cutoff 설정
 cutoff <- 0.1 
+
+# cutoff에 따른 예측
 pred <- ifelse(x < cutoff, "ALL", "AML") 
 data.frame(predicted=pred, true=golubFactor) 
 ```
@@ -1473,8 +1480,56 @@ abline(h=cutoff[pval2 < 0.05], lty=2, col="gray")
 
 ### Fisher’s Exact Test
 
+- # of Sample이 작을 때 쓰는 Chi-Squared test의 대안.
+
+``` r
+data = matrix(c(100, 1900, 300, 5700), 2, byrow = TRUE)
+data
+```
+
+    ##      [,1] [,2]
+    ## [1,]  100 1900
+    ## [2,]  300 5700
+
+``` r
+odr = (100 * 5700) / (1900 * 300)
+```
+
+``` r
+fisher.test(data)
+```
+
+    ## 
+    ##  Fisher's Exact Test for Count Data
+    ## 
+    ## data:  data
+    ## p-value = 1
+    ## alternative hypothesis: true odds ratio is not equal to 1
+    ## 95 percent confidence interval:
+    ##  0.7845883 1.2660152
+    ## sample estimates:
+    ## odds ratio 
+    ##          1
+
 ``` r
 data <- matrix(c(300,500,3000,7000), 2, byrow=TRUE) 
+data
+```
+
+    ##      [,1] [,2]
+    ## [1,]  300  500
+    ## [2,] 3000 7000
+
+- odds ratio -\>\> 1이면 독립이다.
+
+``` r
+odr = (300 * 7000) / (500 * 3000)
+odr
+```
+
+    ## [1] 1.4
+
+``` r
 fisher.test(data)
 ```
 
@@ -1489,3 +1544,732 @@ fisher.test(data)
     ## sample estimates:
     ## odds ratio 
     ##   1.399977
+
+### Hardy Weinberg Equilibrium
+
+### Asthma SNP Data
+
+``` r
+library(SNPassoc) 
+data(asthma, package = "SNPassoc")
+```
+
+``` r
+dim(asthma) 
+```
+
+    ## [1] 1578   57
+
+``` r
+str(asthma) 
+```
+
+    ## 'data.frame':    1578 obs. of  57 variables:
+    ##  $ country    : Factor w/ 10 levels "Australia","Belgium",..: 5 5 5 5 5 5 5 5 5 5 ...
+    ##  $ gender     : Factor w/ 2 levels "Females","Males": 2 2 2 1 1 1 1 2 1 1 ...
+    ##  $ age        : num  42.8 50.2 46.7 47.9 48.4 ...
+    ##  $ bmi        : num  20.1 24.7 27.7 33.3 25.2 ...
+    ##  $ smoke      : int  1 0 0 0 0 1 0 0 0 0 ...
+    ##  $ casecontrol: int  0 0 0 0 1 0 0 0 0 0 ...
+    ##  $ rs4490198  : Factor w/ 3 levels "AA","AG","GG": 3 3 3 2 2 2 3 2 2 2 ...
+    ##  $ rs4849332  : Factor w/ 3 levels "GG","GT","TT": 3 2 3 2 1 2 3 3 2 1 ...
+    ##  $ rs1367179  : Factor w/ 3 levels "CC","GC","GG": 2 2 2 3 3 3 2 3 3 3 ...
+    ##  $ rs11123242 : Factor w/ 3 levels "CC","CT","TT": 2 2 2 1 1 1 2 1 1 1 ...
+    ##  $ rs13014858 : Factor w/ 3 levels "AA","GA","GG": 1 2 1 2 3 2 2 2 2 3 ...
+    ##  $ rs1430094  : Factor w/ 3 levels "AA","GA","GG": 1 2 1 2 3 2 2 2 2 3 ...
+    ##  $ rs1430093  : Factor w/ 3 levels "AA","CA","CC": 1 2 1 2 3 2 2 2 2 3 ...
+    ##  $ rs746710   : Factor w/ 3 levels "CC","GC","GG": 1 1 1 2 2 2 2 2 2 2 ...
+    ##  $ rs1430090  : Factor w/ 3 levels "GG","TG","TT": 2 1 3 3 3 3 3 3 3 2 ...
+    ##  $ rs6737251  : Factor w/ 3 levels "CC","CT","TT": 1 1 3 2 3 1 1 1 2 2 ...
+    ##  $ rs11685217 : Factor w/ 3 levels "CC","CT","TT": 1 1 2 2 2 1 1 1 1 2 ...
+    ##  $ rs1430097  : Factor w/ 3 levels "AA","CA","CC": 3 3 1 2 1 2 3 3 2 2 ...
+    ##  $ rs10496465 : Factor w/ 3 levels "AA","AG","GG": 2 2 1 1 1 1 1 1 1 1 ...
+    ##  $ rs3756688  : Factor w/ 3 levels "CC","TC","TT": 3 2 2 1 2 2 3 2 1 2 ...
+    ##  $ rs2303063  : Factor w/ 3 levels "AA","AG","GG": 1 2 2 3 2 2 1 2 3 2 ...
+    ##  $ rs1422993  : Factor w/ 3 levels "GG","GT","TT": 1 2 1 2 2 1 1 1 3 1 ...
+    ##  $ rs2400478  : Factor w/ 3 levels "AA","GA","GG": 3 2 3 2 2 3 3 3 1 3 ...
+    ##  $ rs714588   : Factor w/ 3 levels "AA","AG","GG": 2 1 2 2 1 2 2 2 2 2 ...
+    ##  $ rs1023555  : Factor w/ 3 levels "AA","TA","TT": 1 3 2 3 3 2 3 3 3 3 ...
+    ##  $ rs898070   : Factor w/ 3 levels "AA","GA","GG": 2 3 3 2 3 3 3 2 2 2 ...
+    ##  $ rs963218   : Factor w/ 3 levels "CC","CT","TT": 1 1 2 2 1 2 1 2 2 2 ...
+    ##  $ rs1419835  : Factor w/ 3 levels "CC","CT","TT": 2 1 2 1 1 2 1 1 1 2 ...
+    ##  $ rs765023   : Factor w/ 3 levels "CC","TC","TT": 3 3 1 2 2 1 2 3 3 2 ...
+    ##  $ rs1345267  : Factor w/ 3 levels "AA","AG","GG": 2 1 3 2 3 3 3 1 1 2 ...
+    ##  $ rs324381   : Factor w/ 3 levels "AA","GA","GG": 2 3 2 2 2 2 2 3 2 2 ...
+    ##  $ hopo546333 : Factor w/ 3 levels "AA","GA","GG": 3 3 2 3 3 3 3 3 3 3 ...
+    ##  $ rs184448   : Factor w/ 3 levels "GG","TG","TT": 3 1 3 2 3 3 3 1 2 2 ...
+    ##  $ rs324396   : Factor w/ 3 levels "CC","CT","TT": 1 3 1 1 1 1 1 2 2 1 ...
+    ##  $ rs324957   : Factor w/ 3 levels "AA","GA","GG": 3 1 3 2 3 3 3 1 2 2 ...
+    ##  $ rs324960   : Factor w/ 3 levels "CC","CT","TT": 2 1 2 1 1 2 1 1 2 1 ...
+    ##  $ rs10486657 : Factor w/ 3 levels "CC","CT","TT": 1 1 2 2 2 2 2 1 1 2 ...
+    ##  $ rs324981   : Factor w/ 3 levels "AA","AT","TT": 2 1 3 2 2 2 2 1 2 2 ...
+    ##  $ rs1419780  : Factor w/ 3 levels "CC","CG","GG": 1 1 2 2 2 2 2 1 1 2 ...
+    ##  $ rs325462   : Factor w/ 3 levels "AA","AT","TT": 3 1 3 2 3 2 3 1 2 2 ...
+    ##  $ rs727162   : Factor w/ 3 levels "CC","GC","GG": 3 3 2 3 3 2 3 2 3 3 ...
+    ##  $ rs10250709 : Factor w/ 3 levels "AA","GA","GG": 1 3 1 3 2 3 2 2 2 3 ...
+    ##  $ rs6958905  : Factor w/ 3 levels "CC","TC","TT": 1 3 1 3 2 3 2 2 2 3 ...
+    ##  $ rs10238983 : Factor w/ 3 levels "CC","TC","TT": 2 3 1 3 2 3 2 3 2 3 ...
+    ##  $ rs4941643  : Factor w/ 3 levels "AA","AG","GG": 2 2 1 2 1 3 2 2 2 3 ...
+    ##  $ rs3794381  : Factor w/ 3 levels "CC","CG","GG": 1 2 1 2 1 2 1 2 2 3 ...
+    ##  $ rs2031532  : Factor w/ 3 levels "AA","GA","GG": 2 2 3 2 3 1 2 2 2 2 ...
+    ##  $ rs2247119  : Factor w/ 3 levels "CC","TC","TT": 2 3 3 2 3 3 2 3 2 3 ...
+    ##  $ rs8000149  : Factor w/ 3 levels "CC","TC","TT": 2 2 3 2 3 1 2 2 2 2 ...
+    ##  $ rs2274276  : Factor w/ 3 levels "CC","GC","GG": 2 2 3 2 3 1 2 2 2 1 ...
+    ##  $ rs7332573  : Factor w/ 3 levels "GG","GT","TT": 1 1 1 1 1 1 1 1 1 2 ...
+    ##  $ rs3829366  : Factor w/ 3 levels "AA","TA","TT": 2 2 3 2 3 1 2 2 2 1 ...
+    ##  $ rs6084432  : Factor w/ 3 levels "AA","GA","GG": 3 3 2 3 3 3 3 3 3 3 ...
+    ##  $ rs512625   : Factor w/ 3 levels "AA","GA","GG": 3 2 2 2 2 1 2 2 3 2 ...
+    ##  $ rs3918395  : Factor w/ 3 levels "GG","GT","TT": 1 1 2 1 1 1 1 1 1 1 ...
+    ##  $ rs2787095  : Factor w/ 3 levels "CC","GC","GG": 2 2 1 2 2 2 2 1 3 3 ...
+    ##  $ rs2853215  : Factor w/ 3 levels "AA","GA","GG": 3 1 3 3 2 3 2 3 2 3 ...
+
+``` r
+lapply(asthma[,-c(1:6)], table)
+```
+
+    ## $rs4490198
+    ## 
+    ##  AA  AG  GG 
+    ## 562 731 275 
+    ## 
+    ## $rs4849332
+    ## 
+    ##  GG  GT  TT 
+    ## 609 732 236 
+    ## 
+    ## $rs1367179
+    ## 
+    ##   CC   GC   GG 
+    ##   56  469 1038 
+    ## 
+    ## $rs11123242
+    ## 
+    ##   CC   CT   TT 
+    ## 1047  469   53 
+    ## 
+    ## $rs13014858
+    ## 
+    ##  AA  GA  GG 
+    ## 283 748 545 
+    ## 
+    ## $rs1430094
+    ## 
+    ##  AA  GA  GG 
+    ## 182 678 712 
+    ## 
+    ## $rs1430093
+    ## 
+    ##  AA  CA  CC 
+    ## 167 682 674 
+    ## 
+    ## $rs746710
+    ## 
+    ##  CC  GC  GG 
+    ## 377 778 423 
+    ## 
+    ## $rs1430090
+    ## 
+    ##  GG  TG  TT 
+    ## 158 614 780 
+    ## 
+    ## $rs6737251
+    ## 
+    ##  CC  CT  TT 
+    ## 766 649 158 
+    ## 
+    ## $rs11685217
+    ## 
+    ##  CC  CT  TT 
+    ## 984 447  76 
+    ## 
+    ## $rs1430097
+    ## 
+    ##  AA  CA  CC 
+    ## 193 703 666 
+    ## 
+    ## $rs10496465
+    ## 
+    ##   AA   AG   GG 
+    ## 1153  385   31 
+    ## 
+    ## $rs3756688
+    ## 
+    ##  CC  TC  TT 
+    ## 217 697 654 
+    ## 
+    ## $rs2303063
+    ## 
+    ##  AA  AG  GG 
+    ## 443 770 348 
+    ## 
+    ## $rs1422993
+    ## 
+    ##  GG  GT  TT 
+    ## 903 570 105 
+    ## 
+    ## $rs2400478
+    ## 
+    ##  AA  GA  GG 
+    ## 229 711 624 
+    ## 
+    ## $rs714588
+    ## 
+    ##  AA  AG  GG 
+    ## 470 780 316 
+    ## 
+    ## $rs1023555
+    ## 
+    ##  AA  TA  TT 
+    ##  83 561 926 
+    ## 
+    ## $rs898070
+    ## 
+    ##  AA  GA  GG 
+    ## 219 735 615 
+    ## 
+    ## $rs963218
+    ## 
+    ##  CC  CT  TT 
+    ## 455 766 353 
+    ## 
+    ## $rs1419835
+    ## 
+    ##  CC  CT  TT 
+    ## 964 526  79 
+    ## 
+    ## $rs765023
+    ## 
+    ##  CC  TC  TT 
+    ## 166 711 592 
+    ## 
+    ## $rs1345267
+    ## 
+    ##  AA  AG  GG 
+    ## 572 781 224 
+    ## 
+    ## $rs324381
+    ## 
+    ##  AA  GA  GG 
+    ## 165 659 571 
+    ## 
+    ## $hopo546333
+    ## 
+    ##   AA   GA   GG 
+    ##    4  202 1361 
+    ## 
+    ## $rs184448
+    ## 
+    ##  GG  TG  TT 
+    ## 274 813 457 
+    ## 
+    ## $rs324396
+    ## 
+    ##  CC  CT  TT 
+    ## 786 667 120 
+    ## 
+    ## $rs324957
+    ## 
+    ##  AA  GA  GG 
+    ## 264 823 484 
+    ## 
+    ## $rs324960
+    ## 
+    ##  CC  CT  TT 
+    ## 677 725 158 
+    ## 
+    ## $rs10486657
+    ## 
+    ##  CC  CT  TT 
+    ## 994 466  50 
+    ## 
+    ## $rs324981
+    ## 
+    ##  AA  AT  TT 
+    ## 426 824 325 
+    ## 
+    ## $rs1419780
+    ## 
+    ##   CC   CG   GG 
+    ## 1025  496   54 
+    ## 
+    ## $rs325462
+    ## 
+    ##  AA  AT  TT 
+    ## 368 806 399 
+    ## 
+    ## $rs727162
+    ## 
+    ##  CC  GC  GG 
+    ##  75 529 974 
+    ## 
+    ## $rs10250709
+    ## 
+    ##  AA  GA  GG 
+    ## 179 735 664 
+    ## 
+    ## $rs6958905
+    ## 
+    ##  CC  TC  TT 
+    ## 188 735 649 
+    ## 
+    ## $rs10238983
+    ## 
+    ##  CC  TC  TT 
+    ##  83 596 892 
+    ## 
+    ## $rs4941643
+    ## 
+    ##  AA  AG  GG 
+    ## 433 718 314 
+    ## 
+    ## $rs3794381
+    ## 
+    ##  CC  CG  GG 
+    ## 758 587 121 
+    ## 
+    ## $rs2031532
+    ## 
+    ##  AA  GA  GG 
+    ## 192 721 665 
+    ## 
+    ## $rs2247119
+    ## 
+    ##  CC  TC  TT 
+    ## 134 628 808 
+    ## 
+    ## $rs8000149
+    ## 
+    ##  CC  TC  TT 
+    ## 208 742 622 
+    ## 
+    ## $rs2274276
+    ## 
+    ##  CC  GC  GG 
+    ## 296 758 514 
+    ## 
+    ## $rs7332573
+    ## 
+    ##   GG   GT   TT 
+    ## 1301  244   10 
+    ## 
+    ## $rs3829366
+    ## 
+    ##  AA  TA  TT 
+    ## 368 771 419 
+    ## 
+    ## $rs6084432
+    ## 
+    ##   AA   GA   GG 
+    ##   48  416 1104 
+    ## 
+    ## $rs512625
+    ## 
+    ##  AA  GA  GG 
+    ## 145 669 758 
+    ## 
+    ## $rs3918395
+    ## 
+    ##   GG   GT   TT 
+    ## 1177  352   30 
+    ## 
+    ## $rs2787095
+    ## 
+    ##  CC  GC  GG 
+    ## 263 719 584 
+    ## 
+    ## $rs2853215
+    ## 
+    ##  AA  GA  GG 
+    ## 124 602 849
+
+``` r
+snp1 <- asthma$rs2274276 
+class(snp1) 
+```
+
+    ## [1] "factor"
+
+``` r
+summary(snp1) 
+```
+
+    ##   CC   GC   GG NA's 
+    ##  296  758  514   10
+
+``` r
+table(snp1)
+```
+
+    ## snp1
+    ##  CC  GC  GG 
+    ## 296 758 514
+
+``` r
+ObsCount <- table(snp1) 
+Nobs <- sum(ObsCount) 
+FreqC <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
+ExpCount <- c(Nobs*(1-FreqC)^2, 2*Nobs*FreqC*(1-FreqC), Nobs*FreqC^2) 
+rbind(ObsCount, ExpCount)
+```
+
+    ##                CC       GC       GG
+    ## ObsCount 296.0000 758.0000 514.0000
+    ## ExpCount 290.5772 768.8457 508.5772
+
+``` r
+ChiSqStat <- sum((ObsCount - ExpCount)^2/ExpCount) 
+ChiSqStat 
+```
+
+    ## [1] 0.3120182
+
+``` r
+pchisq(ChiSqStat, df=2, lower.tail=FALSE)
+```
+
+    ## [1] 0.8555514
+
+``` r
+library(genetics) 
+Snp1 <- genotype(snp1, sep="") 
+summary(Snp1) 
+```
+
+    ## 
+    ## Number of samples typed: 1568 (99.4%)
+    ## 
+    ## Allele Frequency: (2 alleles)
+    ##    Count Proportion
+    ## G   1786       0.57
+    ## C   1350       0.43
+    ## NA    20         NA
+    ## 
+    ## 
+    ## Genotype Frequency:
+    ##     Count Proportion
+    ## G/G   514       0.33
+    ## G/C   758       0.48
+    ## C/C   296       0.19
+    ## NA     10         NA
+    ## 
+    ## Heterozygosity (Hu)  = 0.4904917
+    ## Poly. Inf. Content   = 0.3701209
+
+``` r
+HWE.chisq(Snp1)
+```
+
+    ## 
+    ##  Pearson's Chi-squared test with simulated p-value (based on 10000
+    ##  replicates)
+    ## 
+    ## data:  tab
+    ## X-squared = 0.31202, df = NA, p-value = 0.5996
+
+``` r
+country <- asthma$country 
+table(country)
+```
+
+    ## country
+    ##   Australia     Belgium     Estonia      France     Germany      Norway 
+    ##         127          14           6         219         154         177 
+    ##       Spain      Sweden Switzerland          UK 
+    ##         377         281         100         123
+
+``` r
+Snp1bg <- genotype(snp1[country=="Belgium"], sep="") 
+summary(Snp1bg) 
+```
+
+    ## 
+    ## Number of samples typed: 14 (100%)
+    ## 
+    ## Allele Frequency: (2 alleles)
+    ##   Count Proportion
+    ## C    17       0.61
+    ## G    11       0.39
+    ## 
+    ## 
+    ## Genotype Frequency:
+    ##     Count Proportion
+    ## C/C     4       0.29
+    ## C/G     9       0.64
+    ## G/G     1       0.07
+    ## 
+    ## Heterozygosity (Hu)  = 0.494709
+    ## Poly. Inf. Content   = 0.3632568
+
+``` r
+HWE.chisq(Snp1bg) 
+```
+
+    ## 
+    ##  Pearson's Chi-squared test with simulated p-value (based on 10000
+    ##  replicates)
+    ## 
+    ## data:  tab
+    ## X-squared = 1.6915, df = NA, p-value = 0.07439
+
+``` r
+HWE.exact(Snp1bg)
+```
+
+    ## 
+    ##  Exact Test for Hardy-Weinberg Equilibrium
+    ## 
+    ## data:  Snp1bg
+    ## N11 = 4, N12 = 9, N22 = 1, N1 = 17, N2 = 11, p-value = 0.3198
+
+### Permutation Test
+
+``` r
+set.seed(123) 
+x <- c(1, 3, 4) 
+y <- c(2, 2, 1, 2) 
+sample(c(x, y))
+```
+
+    ## [1] 2 4 1 3 2 2 1
+
+``` r
+library(multtest) 
+data(golub)
+
+golubFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML")) 
+golubFactor
+```
+
+    ##  [1] ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL ALL
+    ## [20] ALL ALL ALL ALL ALL ALL ALL ALL AML AML AML AML AML AML AML AML AML AML AML
+    ## Levels: ALL AML
+
+``` r
+sample(golubFactor) 
+```
+
+    ##  [1] AML ALL ALL ALL ALL ALL ALL AML AML AML AML ALL ALL ALL ALL ALL AML AML ALL
+    ## [20] AML ALL ALL ALL AML ALL ALL ALL ALL ALL ALL AML ALL ALL ALL AML ALL ALL ALL
+    ## Levels: ALL AML
+
+``` r
+sample(as.numeric(golubFactor)) 
+```
+
+    ##  [1] 2 1 1 1 1 1 1 1 1 2 1 1 1 1 1 1 1 2 1 2 1 1 2 2 1 1 1 1 2 1 2 1 2 1 2 2 1 1
+
+``` r
+sample(as.numeric(golubFactor))
+```
+
+    ##  [1] 1 1 2 2 1 2 2 1 2 1 2 1 2 2 1 1 1 1 1 1 1 1 2 1 1 1 1 1 1 1 1 1 1 2 1 1 1 2
+
+``` r
+set.seed(12345) 
+sample(as.numeric(golubFactor))
+```
+
+    ##  [1] 1 1 1 2 1 2 1 2 1 1 2 1 1 1 1 1 2 1 1 1 1 1 1 1 2 1 1 1 2 2 2 2 1 1 1 1 1 2
+
+``` r
+y <- as.numeric(golubFactor) 
+K <- 10000 
+mat.y <- matrix(y, length(y), K) 
+mat.y[,1:5]
+```
+
+    ##       [,1] [,2] [,3] [,4] [,5]
+    ##  [1,]    1    1    1    1    1
+    ##  [2,]    1    1    1    1    1
+    ##  [3,]    1    1    1    1    1
+    ##  [4,]    1    1    1    1    1
+    ##  [5,]    1    1    1    1    1
+    ##  [6,]    1    1    1    1    1
+    ##  [7,]    1    1    1    1    1
+    ##  [8,]    1    1    1    1    1
+    ##  [9,]    1    1    1    1    1
+    ## [10,]    1    1    1    1    1
+    ## [11,]    1    1    1    1    1
+    ## [12,]    1    1    1    1    1
+    ## [13,]    1    1    1    1    1
+    ## [14,]    1    1    1    1    1
+    ## [15,]    1    1    1    1    1
+    ## [16,]    1    1    1    1    1
+    ## [17,]    1    1    1    1    1
+    ## [18,]    1    1    1    1    1
+    ## [19,]    1    1    1    1    1
+    ## [20,]    1    1    1    1    1
+    ## [21,]    1    1    1    1    1
+    ## [22,]    1    1    1    1    1
+    ## [23,]    1    1    1    1    1
+    ## [24,]    1    1    1    1    1
+    ## [25,]    1    1    1    1    1
+    ## [26,]    1    1    1    1    1
+    ## [27,]    1    1    1    1    1
+    ## [28,]    2    2    2    2    2
+    ## [29,]    2    2    2    2    2
+    ## [30,]    2    2    2    2    2
+    ## [31,]    2    2    2    2    2
+    ## [32,]    2    2    2    2    2
+    ## [33,]    2    2    2    2    2
+    ## [34,]    2    2    2    2    2
+    ## [35,]    2    2    2    2    2
+    ## [36,]    2    2    2    2    2
+    ## [37,]    2    2    2    2    2
+    ## [38,]    2    2    2    2    2
+
+``` r
+per.y <- apply(mat.y, 2, sample) 
+per.y[,1:5]
+```
+
+    ##       [,1] [,2] [,3] [,4] [,5]
+    ##  [1,]    1    1    2    1    2
+    ##  [2,]    1    2    2    2    1
+    ##  [3,]    1    1    2    1    1
+    ##  [4,]    1    1    2    1    2
+    ##  [5,]    1    1    1    2    1
+    ##  [6,]    1    1    2    2    2
+    ##  [7,]    2    1    2    2    1
+    ##  [8,]    2    1    1    1    1
+    ##  [9,]    2    1    2    2    2
+    ## [10,]    1    2    1    1    1
+    ## [11,]    1    1    1    2    1
+    ## [12,]    1    1    1    2    1
+    ## [13,]    2    2    1    1    1
+    ## [14,]    1    2    1    1    1
+    ## [15,]    1    2    1    2    2
+    ## [16,]    2    1    1    1    1
+    ## [17,]    2    1    1    2    1
+    ## [18,]    2    1    1    1    2
+    ## [19,]    1    1    1    1    1
+    ## [20,]    1    1    1    1    1
+    ## [21,]    1    1    1    1    1
+    ## [22,]    1    1    2    1    1
+    ## [23,]    1    2    2    1    1
+    ## [24,]    1    1    1    1    1
+    ## [25,]    1    2    1    1    2
+    ## [26,]    1    1    2    1    1
+    ## [27,]    1    1    1    1    1
+    ## [28,]    1    2    1    1    1
+    ## [29,]    1    1    2    1    2
+    ## [30,]    1    2    1    1    1
+    ## [31,]    2    1    1    2    2
+    ## [32,]    1    2    1    1    1
+    ## [33,]    2    1    1    1    2
+    ## [34,]    1    1    1    2    2
+    ## [35,]    2    2    1    1    1
+    ## [36,]    2    1    1    1    1
+    ## [37,]    1    1    1    1    1
+    ## [38,]    1    1    1    1    1
+
+``` r
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE)
+t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE) 
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ] by per.y[, 1]
+    ## t = 0.75, df = 14.632, p-value = 0.4651
+    ## alternative hypothesis: true difference in means between group 1 and group 2 is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.4369684  0.9098350
+    ## sample estimates:
+    ## mean in group 1 mean in group 2 
+    ##        1.598081        1.361648
+
+``` r
+t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE)$stat
+```
+
+    ##         t 
+    ## 0.7500021
+
+``` r
+tobs <- t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE)$stat
+tobs
+```
+
+    ##        t 
+    ## 6.318594
+
+``` r
+fun <- function(t) t.test(golub[ccnd3,]~t, var.equal=FALSE)$stat 
+T <- apply(per.y, 2, fun) 
+T[1:100]
+```
+
+    ##   [1]  0.750002075  0.729906717 -4.004972335 -0.848326811 -0.214045573
+    ##   [6] -0.893949582  1.469308283  1.495298270 -0.205403873  0.163761153
+    ##  [11] -1.184941862  0.432700190 -0.853352558  0.374686129 -0.707562241
+    ##  [16]  0.632076881  0.090351758  1.023466276 -1.181556552  0.110726131
+    ##  [21]  0.072785884 -0.018831018  1.180760691  0.851041514 -0.141666430
+    ##  [26] -0.537026868 -1.524128422 -1.092022884 -0.707460317 -0.134482229
+    ##  [31] -0.462554138 -0.884919543  0.309273874 -0.624451996 -1.752288461
+    ##  [36] -1.194563758 -0.173032656  1.549104769 -0.158274988 -0.345184704
+    ##  [41] -0.842889320 -1.515486314 -1.142508699  2.347815023  0.179727292
+    ##  [46] -0.158495995 -0.863011078 -3.297320259 -1.074057289  0.498187397
+    ##  [51] -1.181457977  0.715956073  0.674322785  1.926432263  0.245915984
+    ##  [56] -1.398733482 -0.895901941  1.142328504  1.082408554  1.001011080
+    ##  [61]  0.578050440 -0.498469520  1.223193589 -0.048090449 -0.015820531
+    ##  [66] -0.271203483 -0.219226289 -0.667576824 -2.492837922  1.387870782
+    ##  [71] -1.042095057  0.096681079 -0.326446181  1.357015108  0.269007176
+    ##  [76] -0.453810572  1.402884288 -0.128311274 -2.161289400 -0.423506961
+    ##  [81] -0.483567506 -0.006770731  0.539084479 -0.901801043 -0.825543403
+    ##  [86] -0.154296784  0.352466127 -0.212858357  0.670559329  1.952371758
+    ##  [91] -1.547960482 -0.302994752  0.863762077  1.326009555 -0.414317196
+    ##  [96] -1.326142167  0.824951776  0.833046077 -0.204141118 -0.153654648
+
+``` r
+mean(abs(T) > abs(tobs))
+```
+
+    ## [1] 0
+
+``` r
+(sum(abs(T) > abs(tobs))+1)/(K+1) 
+```
+
+    ## [1] 9.999e-05
+
+``` r
+1/(K+1)
+```
+
+    ## [1] 9.999e-05
+
+``` r
+hist(T, breaks=100, col="orange", main="", xlim=c(-7, 7), xlab="Null Distribution of Test Statistic")
+x0 <- seq(-7, 7, len=1000) 
+y0 <- dnorm(seq(-7, 7, len=1000)) 
+lines(x0, y0*1000, col=2, lwd=3) 
+abline(v=-abs(tobs), col=4, lty=2, lwd=2) 
+abline(v=abs(tobs), col=4, lty=2, lwd=2) 
+text(abs(tobs)-1, 350, col=4, paste("|T| = ", round(abs(tobs), 4), sep=""))
+```
+
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-70-1.png)<!-- -->
+
+``` r
+gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE) 
+fun2 <- function(t) t.test(golub[gdf5,]~t, var.equal=FALSE)$stat 
+T2 <- apply(per.y, 2, fun2) 
+tobs2 <- t.test(golub[gdf5,] ~ golubFactor, var.equal=FALSE)$stat 
+(sum(abs(T2) > abs(tobs2))+1)/(K+1)
+```
+
+    ## [1] 0.339566
+
+``` r
+hist(T2, breaks=100, col="orange", main="", xlab="Null Distribution of Test Statistic") 
+x0 <- seq(min(T2), max(T2), len=1000) 
+y0 <- dnorm(seq(min(T2), max(T2), len=1000)) 
+lines(x0, y0*1000, col=2, lwd=3) 
+abline(v=-abs(tobs2), col=4, lty=2, lwd=2) 
+abline(v=abs(tobs2), col=4, lty=2, lwd=2) 
+text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
+```
+
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->

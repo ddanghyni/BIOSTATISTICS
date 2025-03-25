@@ -548,11 +548,11 @@ chisq.test(x, p=pi)
 3. 독립성 검정 수행 
 
 $$
-H_0 : \text{cutoff 쓰레기}
+H_0 : \text{cutoff 쓰레기, 실제 레이블과 예측 레이블이 독립이다.}
 $$
 
 $$
-H_1 : \text{성능 좋노!}
+H_1 : \text{성능 좋노!, 실제 레이블과 예측 레이블이 연관이 있다.}
 $$
 
 
@@ -566,7 +566,11 @@ gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE)
 
 ```{r}
 x <- golub[gdf5, ] 
+
+# cutoff 설정
 cutoff <- 0.1 
+
+# cutoff에 따른 예측
 pred <- ifelse(x < cutoff, "ALL", "AML") 
 data.frame(predicted=pred, true=golubFactor) 
 table(predicted=pred, true=golubFactor)
@@ -631,25 +635,174 @@ abline(h=cutoff[pval2 < 0.05], lty=2, col="gray")
 
 ### Fisher’s Exact Test
 
+* # of Sample이 작을 때 쓰는 Chi-Squared test의 대안.
+
+
 ```{r}
-data <- matrix(c(300,500,3000,7000), 2, byrow=TRUE) 
+data = matrix(c(100, 1900, 300, 5700), 2, byrow = TRUE)
+data
+```
+
+
+```{r}
+odr = (100 * 5700) / (1900 * 300)
+```
+
+```{r}
 fisher.test(data)
 ```
 
 
+```{r}
+data <- matrix(c(300,500,3000,7000), 2, byrow=TRUE) 
+data
+```
+
+* odds ratio ->> 1이면 독립이다.
+
+```{r}
+odr = (300 * 7000) / (500 * 3000)
+odr
+```
+
+```{r}
+fisher.test(data)
+```
+
+### Hardy Weinberg Equilibrium
+
+### Asthma SNP Data
+
+```{r}
+library(SNPassoc) 
+data(asthma, package = "SNPassoc")
+```
 
 
+```{r}
+dim(asthma) 
+str(asthma) 
+lapply(asthma[,-c(1:6)], table)
+```
+
+```{r}
+snp1 <- asthma$rs2274276 
+class(snp1) 
+summary(snp1) 
+table(snp1)
+```
+
+```{r}
+ObsCount <- table(snp1) 
+Nobs <- sum(ObsCount) 
+FreqC <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
+ExpCount <- c(Nobs*(1-FreqC)^2, 2*Nobs*FreqC*(1-FreqC), Nobs*FreqC^2) 
+rbind(ObsCount, ExpCount)
+```
+
+```{r}
+ChiSqStat <- sum((ObsCount - ExpCount)^2/ExpCount) 
+ChiSqStat 
+pchisq(ChiSqStat, df=2, lower.tail=FALSE)
+```
+
+```{r}
+library(genetics) 
+Snp1 <- genotype(snp1, sep="") 
+summary(Snp1) 
+HWE.chisq(Snp1)
+```
+
+```{r}
+country <- asthma$country 
+table(country)
+```
+
+```{r}
+Snp1bg <- genotype(snp1[country=="Belgium"], sep="") 
+summary(Snp1bg) 
+HWE.chisq(Snp1bg) 
+HWE.exact(Snp1bg)
+```
 
 
+### Permutation Test
+
+```{r}
+set.seed(123) 
+x <- c(1, 3, 4) 
+y <- c(2, 2, 1, 2) 
+sample(c(x, y))
+```
 
 
+```{r}
+library(multtest) 
+data(golub)
+
+golubFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML")) 
+golubFactor
+
+sample(golubFactor) 
+sample(as.numeric(golubFactor)) 
+sample(as.numeric(golubFactor))
+
+set.seed(12345) 
+sample(as.numeric(golubFactor))
+```
 
 
+```{r}
+y <- as.numeric(golubFactor) 
+K <- 10000 
+mat.y <- matrix(y, length(y), K) 
+mat.y[,1:5]
+
+per.y <- apply(mat.y, 2, sample) 
+per.y[,1:5]
+
+ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE)
+t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE) 
+t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE)$stat
+
+tobs <- t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE)$stat
+tobs
+```
+
+```{r}
+fun <- function(t) t.test(golub[ccnd3,]~t, var.equal=FALSE)$stat 
+T <- apply(per.y, 2, fun) 
+T[1:100]
+
+mean(abs(T) > abs(tobs))
+(sum(abs(T) > abs(tobs))+1)/(K+1) 
+1/(K+1)
+
+hist(T, breaks=100, col="orange", main="", xlim=c(-7, 7), xlab="Null Distribution of Test Statistic")
+x0 <- seq(-7, 7, len=1000) 
+y0 <- dnorm(seq(-7, 7, len=1000)) 
+lines(x0, y0*1000, col=2, lwd=3) 
+abline(v=-abs(tobs), col=4, lty=2, lwd=2) 
+abline(v=abs(tobs), col=4, lty=2, lwd=2) 
+text(abs(tobs)-1, 350, col=4, paste("|T| = ", round(abs(tobs), 4), sep=""))
+```
 
 
+```{r}
+gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE) 
+fun2 <- function(t) t.test(golub[gdf5,]~t, var.equal=FALSE)$stat 
+T2 <- apply(per.y, 2, fun2) 
+tobs2 <- t.test(golub[gdf5,] ~ golubFactor, var.equal=FALSE)$stat 
+(sum(abs(T2) > abs(tobs2))+1)/(K+1)
 
-
-
+hist(T2, breaks=100, col="orange", main="", xlab="Null Distribution of Test Statistic") 
+x0 <- seq(min(T2), max(T2), len=1000) 
+y0 <- dnorm(seq(min(T2), max(T2), len=1000)) 
+lines(x0, y0*1000, col=2, lwd=3) 
+abline(v=-abs(tobs2), col=4, lty=2, lwd=2) 
+abline(v=abs(tobs2), col=4, lty=2, lwd=2) 
+text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
+```
 
 
 
