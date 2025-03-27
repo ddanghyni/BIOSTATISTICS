@@ -22,6 +22,10 @@ Lecture2 : Statistical Test for Genomic Data
 - [Asthma SNP Data](#asthma-snp-data)
 - [Permutation Test](#permutation-test)
 - [Confidence Interval](#confidence-interval-1)
+- [Bootstrap Confidence Interval](#bootstrap-confidence-interval)
+- [Wilcoxon Signed Rank Test](#wilcoxon-signed-rank-test)
+- [Wilcoxon Rank Sum Test](#wilcoxon-rank-sum-test)
+- [Applications to Multiple Genes](#applications-to-multiple-genes)
 
 ### Required Packages
 
@@ -358,8 +362,8 @@ qnorm(0.5, mean = 0, sd = 1)
 rnorm(10, mean = 0, sd = 1)
 ```
 
-    ##  [1]  0.5188326 -0.4821449  1.0971736 -1.2533204 -0.3272178 -0.7101282
-    ##  [7]  0.6434584  0.3618996 -1.6408793 -0.3779476
+    ##  [1] -0.07830167 -0.13549221  0.16570211 -0.84279017  0.40727217 -0.91294945
+    ##  [7]  2.42196003 -1.22595649  1.22520030 -1.06997001
 
 ``` r
 x <- golub[2058, golubFactor=="ALL"]
@@ -1965,7 +1969,7 @@ HWE.chisq(Snp1)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 0.31202, df = NA, p-value = 0.6062
+    ## X-squared = 0.31202, df = NA, p-value = 0.5999
 
 ``` r
 country <- asthma$country 
@@ -2010,7 +2014,7 @@ HWE.chisq(Snp1bg)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 1.6915, df = NA, p-value = 0.07319
+    ## X-squared = 1.6915, df = NA, p-value = 0.07749
 
 ``` r
 HWE.exact(Snp1bg)
@@ -2276,3 +2280,347 @@ text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 ![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
 
 ### Confidence Interval
+
+``` r
+t.test(golub[ccnd3,]) 
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[ccnd3, ]
+    ## t = 12.225, df = 37, p-value = 1.469e-14
+    ## alternative hypothesis: true mean is not equal to 0
+    ## 95 percent confidence interval:
+    ##  1.276107 1.783174
+    ## sample estimates:
+    ## mean of x 
+    ##   1.52964
+
+``` r
+t.test(golub[ccnd3,])$conf.int
+```
+
+    ## [1] 1.276107 1.783174
+    ## attr(,"conf.level")
+    ## [1] 0.95
+
+``` r
+t.test(golub[ccnd3,], mu=1.27)$p.value 
+```
+
+    ## [1] 0.04499534
+
+``` r
+t.test(golub[ccnd3,], mu=1.277)$p.value
+```
+
+    ## [1] 0.05077146
+
+``` r
+t.test(golub[ccnd3,], conf.level=0.90)$conf.int 
+```
+
+    ## [1] 1.318537 1.740743
+    ## attr(,"conf.level")
+    ## [1] 0.9
+
+``` r
+t.test(golub[ccnd3,], mu=1.74)$p.val 
+```
+
+    ## [1] 0.1011567
+
+``` r
+t.test(golub[ccnd3,], mu=1.741)$p.val
+```
+
+    ## [1] 0.09960262
+
+### Bootstrap Confidence Interval
+
+``` r
+1:10 
+```
+
+    ##  [1]  1  2  3  4  5  6  7  8  9 10
+
+``` r
+sample(1:10, replace=TRUE) # replace = TRUE !!! => Bootstrap
+```
+
+    ##  [1] 2 5 7 1 7 2 8 3 4 5
+
+``` r
+sample(1:10, replace=TRUE)
+```
+
+    ##  [1]  4 10  9  8 10  1  9  5  2  4
+
+``` r
+set.seed(1111) 
+sample(1:10, replace=TRUE)
+```
+
+    ##  [1]  6  2 10  4  1  6  6 10  7  1
+
+``` r
+K <- 10000
+mat <- matrix(golub[ccnd3,], length(golub[ccnd3,]), K) 
+fun3 <- function(t) sample(t, replace=TRUE) 
+boot <- apply(mat, 2, fun3) 
+bmean <- apply(boot, 2, mean) 
+quantile(bmean, c(0.025, 0.975))
+```
+
+    ##     2.5%    97.5% 
+    ## 1.275149 1.769409
+
+``` r
+hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap sample means") 
+abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
+```
+
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-78-1.png)<!-- -->
+
+### Wilcoxon Signed Rank Test
+
+``` r
+x <- c(6003, 6304, 6478, 6245, 6134, 6204, 6150) 
+wilcox.test(x, mu=6000)
+```
+
+    ## 
+    ##  Wilcoxon signed rank exact test
+    ## 
+    ## data:  x
+    ## V = 28, p-value = 0.01563
+    ## alternative hypothesis: true location is not equal to 6000
+
+``` r
+nkr <- grep("Nkr", golub.gnames[, 2], ignore.case=TRUE) 
+shapiro.test(golub[nkr, golubFactor=="ALL"]) # 정규성 안따르노 ㅋㅎ
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[nkr, golubFactor == "ALL"]
+    ## W = 0.38118, p-value = 1.268e-09
+
+``` r
+shapiro.test(golub[nkr, golubFactor=="AML"]) # 정규성 따른다.
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[nkr, golubFactor == "AML"]
+    ## W = 0.94277, p-value = 0.5535
+
+``` r
+par(mfrow=c(1,2)) 
+qqnorm(golub[nkr, golubFactor=="ALL"], col="red") 
+qqline(golub[nkr, golubFactor=="ALL"]) 
+qqnorm(golub[nkr, golubFactor=="AML"], col="red") 
+qqline(golub[nkr, golubFactor=="AML"])
+```
+
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-81-1.png)<!-- -->
+
+``` r
+t.test(golub[nkr, golubFactor=="ALL"], mu=-1.2) 
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  golub[nkr, golubFactor == "ALL"]
+    ## t = -0.016947, df = 26, p-value = 0.9866
+    ## alternative hypothesis: true mean is not equal to -1.2
+    ## 95 percent confidence interval:
+    ##  -1.4675900 -0.9367863
+    ## sample estimates:
+    ## mean of x 
+    ## -1.202188
+
+``` r
+wilcox.test(golub[nkr, golubFactor=="ALL"], mu=-1.2)
+```
+
+    ## 
+    ##  Wilcoxon signed rank exact test
+    ## 
+    ## data:  golub[nkr, golubFactor == "ALL"]
+    ## V = 59, p-value = 0.001132
+    ## alternative hypothesis: true location is not equal to -1.2
+
+``` r
+set.seed(12345) 
+K <- 100000 
+nkr.ALL <- golub[nkr, golubFactor=="ALL"] 
+nkr.ALL 
+```
+
+    ##  [1] -1.45769 -1.39420 -1.46227 -1.40715 -1.42668 -1.21719 -1.37386 -1.36832
+    ##  [9] -1.47649 -1.21583 -1.28137 -1.03209 -1.36149  2.07770 -1.39503 -1.40095
+    ## [17] -1.56783 -1.20466 -1.24482 -1.60767 -1.06221 -1.12665 -1.20963 -1.48332
+    ## [25] -1.25268 -1.27619 -1.23051
+
+``` r
+sample(nkr.ALL, replace=TRUE) 
+```
+
+    ##  [1]  2.07770 -1.24482 -1.40095 -1.27619 -1.48332 -1.27619 -1.28137 -1.48332
+    ##  [9] -1.39420 -1.12665 -1.28137 -1.21719 -1.37386 -1.21583 -1.56783 -1.36832
+    ## [17] -1.37386 -1.21719 -1.45769 -1.03209 -1.60767 -1.36832 -1.27619 -1.03209
+    ## [25] -1.46227 -1.47649  2.07770
+
+``` r
+mean(sample(nkr.ALL, replace=TRUE))
+```
+
+    ## [1] -1.374002
+
+``` r
+mat <- matrix(nkr.ALL, length(nkr.ALL), K) 
+fun3 <- function(t) sample(t, replace=TRUE) 
+boot <- apply(mat, 2, fun3) 
+bmean <- apply(boot, 2, mean)
+quantile(bmean, c(0.025, 0.975))
+```
+
+    ##       2.5%      97.5% 
+    ## -1.3692449 -0.9217678
+
+``` r
+hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap sample means")
+abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
+```
+
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-84-1.png)<!-- -->
+
+### Wilcoxon Rank Sum Test
+
+``` r
+igf <- grep("IGFBP5",golub.gnames[,2], ignore.case = TRUE) 
+shapiro.test(golub[igf, golubFactor=="ALL"]) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[igf, golubFactor == "ALL"]
+    ## W = 0.58386, p-value = 1.344e-07
+
+``` r
+shapiro.test(golub[igf, golubFactor=="AML"]) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  golub[igf, golubFactor == "AML"]
+    ## W = 0.66507, p-value = 0.0001673
+
+``` r
+wilcox.test(golub[igf,] ~ golubFactor)
+```
+
+    ## 
+    ##  Wilcoxon rank sum exact test
+    ## 
+    ## data:  golub[igf, ] by golubFactor
+    ## W = 151, p-value = 0.9495
+    ## alternative hypothesis: true location shift is not equal to 0
+
+### Applications to Multiple Genes
+
+``` r
+dim(golub) 
+```
+
+    ## [1] 3051   38
+
+``` r
+fun <- function(t) shapiro.test(t)$p.value
+```
+
+``` r
+all <- apply(golub[, golubFactor=="ALL"], 1, fun)
+aml <- apply(golub[, golubFactor=="AML"], 1, fun)
+
+sum(all > 0.05)/nrow(golub) 
+```
+
+    ## [1] 0.5827598
+
+``` r
+sum(aml > 0.05)/nrow(golub)
+```
+
+    ## [1] 0.7856441
+
+``` r
+pval.t <- function(t) t.test(t ~ golubFactor)$p.value 
+pval.w <- function(t) wilcox.test(t ~ golubFactor)$p.value
+
+pt <- apply(golub, 1, pval.t) 
+pw <- apply(golub, 1, pval.w)
+```
+
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+    ## Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+    ## compute exact p-value with ties
+
+``` r
+pval <- data.frame(cbind(pt, pw)) 
+nrow(pval[pt < 0.05 & pw >= 0.05, ]) # 서로 반대의 결과를 보여주는..
+```
+
+    ## [1] 114
+
+``` r
+nrow(pval[pw < 0.05 & pt >= 0.05, ]) 
+```
+
+    ## [1] 91
+
+``` r
+apply(pval, 2, function(x) which(x==min(x))) # 2124이 가장 signal 쌔다..?
+```
+
+    ## $pt
+    ## [1] 2124
+    ## 
+    ## $pw
+    ## [1]  896 2124
+
+``` r
+# 뭐 나중에는 ranking 순으로 gene별 중요도 확인도 한대.
+```
+
+chapter 2 end…
+
+<hr>

@@ -812,28 +812,140 @@ text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 
 ### Confidence Interval
 
+```{r}
+t.test(golub[ccnd3,]) 
+t.test(golub[ccnd3,])$conf.int
+
+t.test(golub[ccnd3,], mu=1.27)$p.value 
+t.test(golub[ccnd3,], mu=1.277)$p.value
+
+t.test(golub[ccnd3,], conf.level=0.90)$conf.int 
+t.test(golub[ccnd3,], mu=1.74)$p.val 
+t.test(golub[ccnd3,], mu=1.741)$p.val
+```
+
+### Bootstrap Confidence Interval
+
+```{r}
+1:10 
+sample(1:10, replace=TRUE) # replace = TRUE !!! => Bootstrap
+sample(1:10, replace=TRUE)
+```
+
+```{r}
+set.seed(1111) 
+sample(1:10, replace=TRUE)
+```
+
+```{r}
+K <- 10000
+mat <- matrix(golub[ccnd3,], length(golub[ccnd3,]), K) 
+fun3 <- function(t) sample(t, replace=TRUE) 
+boot <- apply(mat, 2, fun3) 
+bmean <- apply(boot, 2, mean) 
+quantile(bmean, c(0.025, 0.975))
+```
+
+```{r}
+hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap sample means") 
+abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
+```
 
 
 
+### Wilcoxon Signed Rank Test
+
+```{r}
+x <- c(6003, 6304, 6478, 6245, 6134, 6204, 6150) 
+wilcox.test(x, mu=6000)
+```
+
+```{r}
+nkr <- grep("Nkr", golub.gnames[, 2], ignore.case=TRUE) 
+shapiro.test(golub[nkr, golubFactor=="ALL"]) # 정규성 안따르노 ㅋㅎ
+shapiro.test(golub[nkr, golubFactor=="AML"]) # 정규성 따른다.
+```
 
 
+```{r}
+par(mfrow=c(1,2)) 
+qqnorm(golub[nkr, golubFactor=="ALL"], col="red") 
+qqline(golub[nkr, golubFactor=="ALL"]) 
+qqnorm(golub[nkr, golubFactor=="AML"], col="red") 
+qqline(golub[nkr, golubFactor=="AML"])
+```
 
 
+```{r}
+t.test(golub[nkr, golubFactor=="ALL"], mu=-1.2) 
+wilcox.test(golub[nkr, golubFactor=="ALL"], mu=-1.2)
+```
+
+```{r}
+set.seed(12345) 
+K <- 100000 
+nkr.ALL <- golub[nkr, golubFactor=="ALL"] 
+nkr.ALL 
+sample(nkr.ALL, replace=TRUE) 
+mean(sample(nkr.ALL, replace=TRUE))
+
+mat <- matrix(nkr.ALL, length(nkr.ALL), K) 
+fun3 <- function(t) sample(t, replace=TRUE) 
+boot <- apply(mat, 2, fun3) 
+bmean <- apply(boot, 2, mean)
+quantile(bmean, c(0.025, 0.975))
+```
+
+```{r}
+hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap sample means")
+abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
+```
+
+### Wilcoxon Rank Sum Test
+
+```{r}
+igf <- grep("IGFBP5",golub.gnames[,2], ignore.case = TRUE) 
+shapiro.test(golub[igf, golubFactor=="ALL"]) 
+shapiro.test(golub[igf, golubFactor=="AML"]) 
+wilcox.test(golub[igf,] ~ golubFactor)
+```
 
 
+### Applications to Multiple Genes
+
+```{r}
+dim(golub) 
+fun <- function(t) shapiro.test(t)$p.value
+```
+
+```{r}
+all <- apply(golub[, golubFactor=="ALL"], 1, fun)
+aml <- apply(golub[, golubFactor=="AML"], 1, fun)
+
+sum(all > 0.05)/nrow(golub) 
+sum(aml > 0.05)/nrow(golub)
+```
 
 
+```{r}
+pval.t <- function(t) t.test(t ~ golubFactor)$p.value 
+pval.w <- function(t) wilcox.test(t ~ golubFactor)$p.value
+
+pt <- apply(golub, 1, pval.t) 
+pw <- apply(golub, 1, pval.w)
+
+pval <- data.frame(cbind(pt, pw)) 
+nrow(pval[pt < 0.05 & pw >= 0.05, ]) # 서로 반대의 결과를 보여주는..
+nrow(pval[pw < 0.05 & pt >= 0.05, ]) 
+apply(pval, 2, function(x) which(x==min(x))) # 2124이 가장 signal 쌔다..?
+
+# 뭐 나중에는 ranking 순으로 gene별 중요도 확인도 한대.
+```
 
 
+chapter 2 end...
 
-
-
-
-
-
-
-
-
+<hr>
 
 
 
