@@ -362,8 +362,8 @@ qnorm(0.5, mean = 0, sd = 1)
 rnorm(10, mean = 0, sd = 1)
 ```
 
-    ##  [1] -0.07830167 -0.13549221  0.16570211 -0.84279017  0.40727217 -0.91294945
-    ##  [7]  2.42196003 -1.22595649  1.22520030 -1.06997001
+    ##  [1]  1.2211731 -0.3472018 -1.2001554  1.8387957  0.4101926  0.1039657
+    ##  [7] -1.9480056 -1.4061762 -0.7968516 -1.0950681
 
 ``` r
 x <- golub[2058, golubFactor=="ALL"]
@@ -1485,7 +1485,7 @@ abline(h=cutoff[pval2 < 0.05], lty=2, col="gray")
 
 ### Fisher’s Exact Test
 
-- # of Sample이 작을 때 쓰는 Chi-Squared test의 대안.
+- Sample이 작을 때 쓰는 Chi-Squared test의 대안.
 
 ``` r
 data = matrix(c(100, 1900, 300, 5700), 2, byrow = TRUE)
@@ -1551,6 +1551,101 @@ fisher.test(data)
     ##   1.399977
 
 ### Hardy Weinberg Equilibrium
+
+- Allele frequencies are **constant** within a popualtion over
+  generations
+
+> Allele 빈도는 세대가 변해도 유지된다..!
+
+- Test of HWE
+
+  - Pearson’s $\chi^2$ test
+
+  - Fisher’s exact test
+
+- When HWE exists, genotype freq only depend on **allele freq**.
+
+``` r
+# example
+set.seed(202211545)
+n <- 10000
+F <- runif(1, 0.1, 0.5)
+C <- sample(0:1, 2*n, prob=c(F, 1-F), replace=TRUE)
+Geno <- apply(matrix(C, ncol=2), 1, sum)
+
+#' Geno denotes the number of major alleles. No major alleles are coded as 0, only 1 major allele as 1 and 2 as 2
+#' Minor allele freq(MAF) is F
+
+
+#' Estimate MAF - > P_a => minor allele freq, P_A => major allele freq
+#' a가 몇개 나왔는지 알아야함 -> table()로 알 수 있겠지?
+table(Geno)[1] # aa 
+```
+
+    ##   0 
+    ## 648
+
+``` r
+table(Geno)[2] # Aa
+```
+
+    ##    1 
+    ## 3839
+
+``` r
+MAF = (table(Geno)[1] * 2 + table(Geno)[2] * 1) / (n * 2)
+round(MAF, 4)
+```
+
+    ##      0 
+    ## 0.2568
+
+``` r
+#' Chi-squ test gogo
+table(Geno)
+```
+
+    ## Geno
+    ##    0    1    2 
+    ##  648 3839 5513
+
+``` r
+# expect count
+Exp = c(n * MAF^2, 2 * n * MAF * (1 - MAF), n * (1 -MAF)^2) # Aa => Aa, aA -> 2배
+
+# Chi-sqr test
+sum((table(Geno) -  Exp)^2 / Exp )
+```
+
+    ## [1] 0.3448113
+
+``` r
+round(sum((table(Geno) -  Exp)^2 / Exp ), 4)
+```
+
+    ## [1] 0.3448
+
+``` r
+t = c(MAF^2, 2*MAF*(1-MAF), (1-MAF)^2)
+chisq.test(table(Geno), p = t)
+```
+
+    ## 
+    ##  Chi-squared test for given probabilities
+    ## 
+    ## data:  table(Geno)
+    ## X-squared = 0.34481, df = 2, p-value = 0.8416
+
+``` r
+pi = c(F^2, 2*F*(1-F), (1-F)^2)
+chisq.test(table(Geno), p = pi)
+```
+
+    ## 
+    ##  Chi-squared test for given probabilities
+    ## 
+    ## data:  table(Geno)
+    ## X-squared = 1.4844, df = 2, p-value = 0.4761
 
 ### Asthma SNP Data
 
@@ -1912,7 +2007,7 @@ table(snp1) # c is major and g is minor
 ``` r
 ObsCount <- table(snp1) 
 Nobs <- sum(ObsCount) 
-FreqG <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs)
+FreqG <- (2*ObsCount[3] + ObsCount[2])/(2*Nobs) # P_G
 ExpCount <- c(Nobs*(1-FreqG)^2, 2*Nobs*FreqG*(1-FreqG), Nobs*FreqG^2) 
 rbind(ObsCount, ExpCount)
 ```
@@ -1929,7 +2024,7 @@ ChiSqStat
     ## [1] 0.3120182
 
 ``` r
-pchisq(ChiSqStat, df=2, lower.tail=FALSE)
+pchisq(ChiSqStat, df=2, lower.tail=FALSE) # Lower.tail = FALSE = > 오른쪽 꼬리 확률 계산
 ```
 
     ## [1] 0.8555514
@@ -1969,7 +2064,7 @@ HWE.chisq(Snp1)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 0.31202, df = NA, p-value = 0.5999
+    ## X-squared = 0.31202, df = NA, p-value = 0.612
 
 ``` r
 country <- asthma$country 
@@ -2014,7 +2109,7 @@ HWE.chisq(Snp1bg)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 1.6915, df = NA, p-value = 0.07749
+    ## X-squared = 1.6915, df = NA, p-value = 0.07649
 
 ``` r
 HWE.exact(Snp1bg)
@@ -2028,6 +2123,31 @@ HWE.exact(Snp1bg)
 
 ### Permutation Test
 
+- Permutation tests is a **resampling based test**.
+
+- We can compute a permu test p-v if
+
+  - Null hypo $H_0$ or test statistic $T$ is somewhat unusual like
+    median.
+
+  - 각종 가설(정규성 등)이 기각되었을때 사용.
+
+- Permutation test is popularly used for testion genomic data since
+  population distribution of data is **usually unkown** and **sample
+  size is limited**.
+
+- Under the Null that $\mu_x = \mu_y$ , compute all possible test
+  statistic $T$.
+
+> 그니깐 뮤 엑스 뮤 와이가 같다는 가정하에 가능한 모든 T를 구해서 그 T로
+> 분포를 만듦
+
+![](images/clipboard-3422663244.png)
+
+![](images/clipboard-2220365656.png)
+
+- resampling된 데이터의 개수는 n+m으로 기존과 같다.
+
 ``` r
 set.seed(123) 
 x <- c(1, 3, 4) 
@@ -2036,6 +2156,8 @@ sample(c(x, y))
 ```
 
     ## [1] 2 4 1 3 2 2 1
+
+![](images/clipboard-1844411587.png)
 
 ``` r
 library(multtest) 
@@ -2058,7 +2180,7 @@ sample(golubFactor)
     ## Levels: ALL AML
 
 ``` r
-sample(as.numeric(golubFactor)) 
+sample(as.numeric(golubFactor))  # resampling...
 ```
 
     ##  [1] 2 1 1 1 1 1 1 1 1 2 1 1 1 1 1 1 1 2 1 2 1 1 2 2 1 1 1 1 2 1 2 1 2 1 2 2 1 1
@@ -2076,10 +2198,13 @@ sample(as.numeric(golubFactor))
 
     ##  [1] 1 1 1 2 1 2 1 2 1 1 2 1 1 1 1 1 2 1 1 1 1 1 1 1 2 1 1 1 2 2 2 2 1 1 1 1 1 2
 
+- `t.test(data ~ group)` : data를 group이란 그룹 기준으로 비교해 t
+  검정을 하라.!!
+
 ``` r
-y <- as.numeric(golubFactor) 
-K <- 10000 
-mat.y <- matrix(y, length(y), K) 
+y <- as.numeric(golubFactor)  # origin values
+K <- 10000 # 10000번 rsampling 하자!
+mat.y <- matrix(y, length(y), K) # 행은 y 즉 기존 데이터 수 (n+m), 열은 반복하는 만큼 ㄱㄱ
 mat.y[,1:5]
 ```
 
@@ -2186,6 +2311,7 @@ t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE)
     ##        1.598081        1.361648
 
 ``` r
+# per.y[,1] -> 첫 번째 resample로 했을때의 검정 통계량임..!
 t.test(golub[ccnd3,] ~ per.y[,1], var.equal=FALSE)$stat
 ```
 
@@ -2201,6 +2327,7 @@ tobs
     ## 6.318594
 
 ``` r
+# 이제 검정 통계량 10000개 구해보자..!
 fun <- function(t) t.test(golub[ccnd3,]~t, var.equal=FALSE)$stat 
 T <- apply(per.y, 2, fun) 
 T[1:100]
@@ -2234,7 +2361,7 @@ mean(abs(T) > abs(tobs))
     ## [1] 0
 
 ``` r
-(sum(abs(T) > abs(tobs))+1)/(K+1) 
+(sum(abs(T) > abs(tobs))+1)/(K+1) # p-value
 ```
 
     ## [1] 9.999e-05
@@ -2255,7 +2382,7 @@ abline(v=abs(tobs), col=4, lty=2, lwd=2)
 text(abs(tobs)-1, 350, col=4, paste("|T| = ", round(abs(tobs), 4), sep=""))
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
 
 ``` r
 gdf5 <- grep("Gdf5", golub.gnames[,2], ignore.case=TRUE) 
@@ -2277,9 +2404,14 @@ abline(v=abs(tobs2), col=4, lty=2, lwd=2)
 text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-74-1.png)<!-- -->
 
 ### Confidence Interval
+
+- The CI is an interval estimate for a population parameter.
+
+- This interval requires we have a random sample from a **normal
+  population**.
 
 ``` r
 t.test(golub[ccnd3,]) 
@@ -2339,6 +2471,15 @@ t.test(golub[ccnd3,], mu=1.741)$p.val
 
 ### Bootstrap Confidence Interval
 
+- 정규성을 따르지 않을 때! t 분포 이용 못하니깐! Bootstrap 쓰자!
+
+![](images/clipboard-2757766098.png)
+
+> Bootstrap으로 만든 분포는 정확히 말하면
+>
+> “원래 데이터에서 리샘플링(with replacement)한 샘플들의 **표본평균의
+> 분포**” 이다!
+
 ``` r
 1:10 
 ```
@@ -2367,10 +2508,21 @@ sample(1:10, replace=TRUE)
 ``` r
 K <- 10000
 mat <- matrix(golub[ccnd3,], length(golub[ccnd3,]), K) 
+mat[1:5, 1:5]
+```
+
+    ##         [,1]    [,2]    [,3]    [,4]    [,5]
+    ## [1,] 2.10892 2.10892 2.10892 2.10892 2.10892
+    ## [2,] 1.52405 1.52405 1.52405 1.52405 1.52405
+    ## [3,] 1.96403 1.96403 1.96403 1.96403 1.96403
+    ## [4,] 2.33597 2.33597 2.33597 2.33597 2.33597
+    ## [5,] 1.85111 1.85111 1.85111 1.85111 1.85111
+
+``` r
 fun3 <- function(t) sample(t, replace=TRUE) 
 boot <- apply(mat, 2, fun3) 
 bmean <- apply(boot, 2, mean) 
-quantile(bmean, c(0.025, 0.975))
+quantile(bmean, c(0.025, 0.975)) # 95% 신뢰구간! 
 ```
 
     ##     2.5%    97.5% 
@@ -2381,9 +2533,15 @@ hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap s
 abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-78-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-79-1.png)<!-- -->
 
 ### Wilcoxon Signed Rank Test
+
+- one sample t-test의 비모수 버전
+
+- 데이터가 정규성을 따르지 않을 때
+
+- 또는 샘플 크기가 작을 때!
 
 ``` r
 x <- c(6003, 6304, 6478, 6245, 6134, 6204, 6150) 
@@ -2426,7 +2584,7 @@ qqnorm(golub[nkr, golubFactor=="AML"], col="red")
 qqline(golub[nkr, golubFactor=="AML"])
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-81-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-82-1.png)<!-- -->
 
 ``` r
 t.test(golub[nkr, golubFactor=="ALL"], mu=-1.2) 
@@ -2454,6 +2612,8 @@ wilcox.test(golub[nkr, golubFactor=="ALL"], mu=-1.2)
     ## data:  golub[nkr, golubFactor == "ALL"]
     ## V = 59, p-value = 0.001132
     ## alternative hypothesis: true location is not equal to -1.2
+
+#### Bootstra Confidence Interval in nonparametric test.
 
 ``` r
 set.seed(12345) 
@@ -2486,7 +2646,7 @@ mean(sample(nkr.ALL, replace=TRUE))
 mat <- matrix(nkr.ALL, length(nkr.ALL), K) 
 fun3 <- function(t) sample(t, replace=TRUE) 
 boot <- apply(mat, 2, fun3) 
-bmean <- apply(boot, 2, mean)
+bmean <- apply(boot, 2, mean) # bootstrap 표본평균 계산
 quantile(bmean, c(0.025, 0.975))
 ```
 
@@ -2498,9 +2658,11 @@ hist(bmean, breaks=100, col="orange", main="", xlab="Distribution of bootstrap s
 abline(v=quantile(bmean, c(0.025, 0.975)), col=4, lty=2, lwd=2)
 ```
 
-![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-84-1.png)<!-- -->
+![](Lecture2---Statistical-Test-for-Genomic-Data_files/figure-gfm/unnamed-chunk-85-1.png)<!-- -->
 
 ### Wilcoxon Rank Sum Test
+
+- two sample t test의 비모수 검정 방법.
 
 ``` r
 igf <- grep("IGFBP5",golub.gnames[,2], ignore.case = TRUE) 
@@ -2535,6 +2697,8 @@ wilcox.test(golub[igf,] ~ golubFactor)
     ## alternative hypothesis: true location shift is not equal to 0
 
 ### Applications to Multiple Genes
+
+- 정규성 통과한 유전자 비율 예제
 
 ``` r
 dim(golub) 
@@ -2596,18 +2760,22 @@ pw <- apply(golub, 1, pval.w)
 
 ``` r
 pval <- data.frame(cbind(pt, pw)) 
+
+# t-test는 유의(p<0.05)인데 wilcox는 유의하지 않은 유전자 수
 nrow(pval[pt < 0.05 & pw >= 0.05, ]) # 서로 반대의 결과를 보여주는..
 ```
 
     ## [1] 114
 
 ``` r
+# wilcox는 유의(p<0.05)인데 t-test는 유의하지 않은 유전자 수
 nrow(pval[pw < 0.05 & pt >= 0.05, ]) 
 ```
 
     ## [1] 91
 
 ``` r
+# 각각의 방법에서 p-value가 가장 작은 유전자의 인덱스 찾기
 apply(pval, 2, function(x) which(x==min(x))) # 2124이 가장 signal 쌔다..?
 ```
 
@@ -2620,6 +2788,11 @@ apply(pval, 2, function(x) which(x==min(x))) # 2124이 가장 signal 쌔다..?
 ``` r
 # 뭐 나중에는 ranking 순으로 gene별 중요도 확인도 한대.
 ```
+
+- 통계적으로 p-value가 가장 작다는 건?
+
+- → 그 유전자는 두 그룹(ALL vs AML) 간의 **발현량 차이가 가장 극명하게
+  드러나는 유전자**라는 뜻.
 
 chapter 2 end…
 
