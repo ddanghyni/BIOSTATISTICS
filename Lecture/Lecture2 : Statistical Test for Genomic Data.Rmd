@@ -671,7 +671,6 @@ Geno <- apply(matrix(C, ncol=2), 1, sum)
 #' Geno denotes the number of major alleles. No major alleles are coded as 0, only 1 major allele as 1 and 2 as 2
 #' Minor allele freq(MAF) is F
 
-
 #' Estimate MAF - > P_a => minor allele freq, P_A => major allele freq
 #' a가 몇개 나왔는지 알아야함 -> table()로 알 수 있겠지?
 table(Geno)[1] # aa 
@@ -695,6 +694,26 @@ chisq.test(table(Geno), p = t)
 
 pi = c(F^2, 2*F*(1-F), (1-F)^2)
 chisq.test(table(Geno), p = pi)
+
+table(Geno)
+
+
+##############################################################################################
+
+library(genetics)
+
+# Geno 벡터를 유전자형 형태로 바꿔주기
+# 0 = aa, 1 = Aa, 2 = AA
+geno_vec = rep(NA, length(Geno))
+geno_vec[Geno == 0] = "aa"
+geno_vec[Geno == 1] = "Aa"
+geno_vec[Geno == 2] = "AA"
+
+geno_factor = genotype(geno_vec, sep = "")
+
+# Fisher's exact HWE test (genetics 패키지)
+HWE.exact(geno_factor)
+HWE.chisq(geno_factor)
 
 ```
 
