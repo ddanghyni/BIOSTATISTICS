@@ -1,0 +1,18 @@
+---
+title: 'Lecture3 : Multiple Testing Procedure'
+author: "KIM SANG HYUN(202211545)"
+date: "2025-04-01"
+output: 
+  github_document:
+    toc: yes
+---
+
+```{r}
+library(multtest)
+library(ISLR2)
+library(qqman)
+library(RColorBrewer)
+```
+
+## Bonferroni Adjustment
+
