@@ -84,14 +84,13 @@ In single test...
 
 > 3051의 genes들을 0.05 기준에서 3051번 테스팅하면... 적어도 하나의 type I error가 3051개 중에서 나올 확률?
 
-$$
-\begin{align*}P(\text{At least one error}) &= 1 - P(\text{No errors}) \\&= 1 - (1 - \alpha)^{3051} \\&= 1 - (0.95)^{3051} \\&\approx 1\end{align*}
-                              
-$$
+\$\$ \begin{align*}P(\text{At least one error}) &= 1 - P(\text{No errors}) \\&= 1 - (1 - \alpha)^{3051} \\&= 1 - (0.95)^{3051} \\&\approx 1\end{align*}
+
+\$\$
 
 -   즉, 적어도 type I error (False positive)가 나올 확률은 100%이다..
 
--    위의 내용을 m개로 일반화하여 정리하면
+-   위의 내용을 m개로 일반화하여 정리하면
 
 | P(·)   | m   | P(·)   | m   |
 |--------|-----|--------|-----|
@@ -426,3 +425,343 @@ $$
 \text{FDR} = E({V \over R}|R>0)P(R>0) + E({V \over R} | R = 0)P(R = 0) \newline 
 = E({V \over R}|R >0)P(R>0)
 $$
+
+> $R$ =0, 즉, 하나도 reject가 안된 경우 FDR을 구하기 힘들다.
+
+-   If we assume that nulls $H_0$ are tre then $V = R$, hence
+
+$$
+FDR = P(P \ge 1) => \text{FDR = FWER}
+$$
+
+-   With FWER, we want to limit the probability of making even a 'single' mistake.
+
+-   On the other hand, FDR explicitly allows us to make some mistakes.
+
+## How to Control FDR
+
+-   우리는 BH procedure만 수행한다..!
+
+## Benjamini-Hochberg procedure
+
+### ■ Benjamini and Hochberg (BH) Adjustment
+
+① Let $p_{(1)}, \ldots, p_{(m)}$ denote the ordered observed *p*-values such that: $$
+p_{(1)} \leq p_{(2)} \leq \cdots \leq p_{(m)} -> \text{어디서 cut 할까?}
+$$ and let the corresponding null hypotheses be given by\
+$$
+H_0^{(1)}, H_0^{(2)}, \ldots, H_0^{(m)}.
+$$
+
+② Define\
+$$
+k = \max \left\{ i : p_{(i)} \leq \frac{i}{m} q \right\}
+$$
+
+$$
+P_{(i)} {m \over i} < q
+$$
+
+> FDR은 모든 p-value p(i)가 Null이라고 생각한거임.
+
+where $q$ is the level at which we want to control the FDR. ($q = 0.1, 0.05, 0.2....$)
+
+③ Reject\
+$$
+H_0^{(1)}, H_0^{(2)}, \ldots, H_0^{(k)}.
+$$
+
+-   We can also get adjusted $p$-values for the $i$-th test by letting
+
+$$
+p_i^* = p_i{m \over i}
+$$
+
+-   However after this adjustment the adjusted $p$-values may on longer be strictly increasing, hence you would go through and fix that up with
+
+$$
+p_i^{**} = min_{j \ge i} p_j^*
+$$
+
+> 나는 FDR를 10% 이내로 control하고 싶어 -\> $p_i^{**}$가 0.1보다 작은 거 다 reject ㄱㄱ
+
+```{r}
+data(golub, package = "multtest")
+golubFactor <- factor(golub.cl,levels=0:1,labels= c("ALL","AML"))
+```
+
+```{r}
+pval <- NULL
+m <- nrow(golub)
+for (i in 1:m) {
+  pval[i] <- t.test(golub[i, ] ~ golubFactor)$p.val
+}
+```
+
+```{r}
+pj <- p.adjust(pval, method="bonferroni")
+pBH <- p.adjust(pval, method="BH")
+c(sum(pj < 0.05), sum(pBH < 0.05)) # 여기서 0.05는 q?
+```
+
+-   `sum(pBH < 0.05)` : FDR을 5% 이내로 유지하겠다 라난 뜻..
+
+```{r}
+695 * 0.05 # FP의 수는 34.75개 정도가 나올 것이다. 그 이상 나오면 안됨.
+```
+
+```{r}
+q <- 0.05
+poo <- sort(pval)
+wh <- which(poo < q*(1:m)/m)
+whh <- 1:max(wh)
+```
+
+```{r}
+plot(poo, pch=20, ylab="P-values", xlab="Genes", main="")
+points(whh, poo[whh], col=4, pch=20)
+abline(a=0, b=q/m, col=2)
+abline(h=q/m, col="darkgreen")
+```
+
+```{r}
+top <- 1000
+poot <- poo[1:top]
+plot(poot, pch=20, ylab="P-values", xlab="Genes", main="")
+points(whh, poot[whh], col=4, pch=20)
+abline(a=0, b=q/m, col=2)
+abline(h=q/m, col="darkgreen")
+```
+
+## Resampling Approach to Compute $p$ -value
+
+-   One representative resampling approach to compute an empirical $p$-value is permutation.
+
+-   검정 통계량이 t-분포를 따른다는 보장이 없고 데이터가 정규성을 안따르거나 그러한 상황일때 $p$-value를 계산하기 위해..
+
+```{r}
+library(ISLR2)
+data(Khan)
+?Khan
+str(Khan)
+```
+
+```{r}
+attach(Khan)
+x <- rbind(xtrain , xtest)
+y <- c(as.numeric(ytrain), as.numeric(ytest))
+dim(x)
+table(y)
+```
+
+```{r}
+x <- as.matrix(x)
+x1 <- x[which(y == 2), ]
+x2 <- x[which(y == 4), ]
+n1 <- nrow(x1)
+n2 <- nrow(x2)
+```
+
+```{r}
+k <- 11 # 11번째 gene 선택
+
+# 정규성 검정
+shapiro.test(x1[, k])
+shapiro.test(x2[, k])
+
+# 등분산성 검정
+bartlett.test(c(x1[,k], x2[,k]) ~ rep(1:2, c(n1, n2)))
+```
+
+```{r}
+t.out <- t.test(x1[, k], x2[, k], var.equal=TRUE)
+t.out$statistic
+t.out$p.value
+```
+
+```{r}
+# resampling
+set.seed(1)
+B = 10000
+T = rep(NA, B)
+for (j in 1:B){
+  dat = sample(c(x1[, k], x2[, k]))
+  T[j] = t.test(dat[1:n1], dat[(n1 + 1) : (n1 + n2)], var.equal = TRUE)$statistic
+}
+(sum(abs(T) >= abs(t.out$statistic))+1)/(B+1)
+```
+
+```{r}
+hist(T, breaks=100, xlim=c(-4.2, 4.2), main="",
+xlab="Null Distribution of Test Statistic", col=7)
+x0 <- seq(-4.2, 4.2, len=1000)
+y0 <- dt(seq(-4.2, 4.2, len=1000), df=(n1 + n2 - 2))
+lines(x0, y0*1000, col=2, lwd=3)
+TT <- t.out$statistic
+abline(v=-TT, col=4, lty=2, lwd=2)
+abline(v=TT, col=4, lty=2, lwd=2)
+text(TT-1, 350, paste("T = ", round(TT, 4), sep=""), col=4)
+```
+
+```{r}
+sum(T <= - abs(t.out$statistic))
+sum(T >= abs(t.out$statistic))
+```
+
+```{r}
+k <- 877
+shapiro.test(x1[, k])
+shapiro.test(x2[, k])
+bartlett.test(c(x1[,k], x2[,k]) ~ rep(1:2, c(n1, n2)))
+```
+
+```{r}
+T <- rep(NA, B)
+set.seed(2)
+for (j in 1:B) {
+    dat <- sample(c(x1[, k], x2[, k]))
+    T[j] <- t.test(dat[1:n1], dat[(n1 + 1):(n1 + n2)],
+        var.equal=FALSE)$statistic
+}
+```
+
+```{r}
+t.out <- t.test(x1[, k], x2[, k], var.equal=FALSE)
+t.out$p.value
+(sum(abs(T) >= abs(t.out$statistic))+1)/(B+1)
+```
+
+```{r}
+hist(T, breaks=100, xlim=c(-2.9, 2.9), main="",
+xlab="Null Distribution of Test Statistic", col=7)
+x0 <- seq(-2.9, 2.9, len=1000)
+y0 <- dt(seq(-2.9, 2.9, len=1000), df=(n1 + n2 - 2))
+lines(x0, y0*500, col=2, lwd=3)
+TT <- t.out$statistic
+abline(v=-TT, col=4, lty=2, lwd=2)
+abline(v=TT, col=4, lty=2, lwd=2)
+text(TT-1, 200, paste("T = ", round(TT, 4), sep=""), col=4)
+```
+
+```{r}
+sum(T <= - abs(t.out$statistic))
+sum(T >= abs(t.out$statistic))
+```
+
+![](images/clipboard-2650654288.png)
+
+## Resampling Approach to control FDR
+
+-   In order to estimate the FDR via resampling, we make the follow approx
+
+$$
+\text{FDR} = E({V \over R}) \approx {E(V) \over R}
+$$
+
+-   where the total number of rejections $R$
+
+$$
+R = \sum^m_{j=1}{I}(|T_j| \gt c)
+$$
+
+-   with a threshold $c$.
+
+![](images/clipboard-2913967207.png)
+
+1.  $V$: 실제로는 귀무가설이 참인 가설들 중, 우리가 잘못 기각해 버린 것들의 총수 (FP)
+2.  $E(V)$: 그 "거짓 기각된 것들"의 기댓값..
+
+-   하지만 문제는 우리가 실제로는 어떤 H_0가 참인지 모른다는 점..
+
+-   그래서 Resampling을 통한 귀무가설이 참일 때 데이터를 만들어보자..!
+
+### Plug-In FDR for a two-sided test
+
+1.  **Select a threshold** $c > 0$.
+
+2.  **For** $j = 1, \ldots, m$ (i.e., for each test):
+
+    1.  Compute the observed test statistic $T_j$ based on **original data**.
+    2.  For $b = 1, \ldots, B$, compute the test statistic $T_{j,b}^*$ based on the $b$-th permuted data.
+
+3.  **Compute** $$
+    R \;=\; \sum_{j=1}^{m} \mathbf{I}\bigl(\lvert T_j\rvert \;\ge\; c\bigr).
+    $$ (i.e., the number of rejected hypotheses under threshold $c$.)
+
+4.  **Compute** $$
+    \hat{V}
+    \;=\;
+    \frac{1}{B}
+    \sum_{b=1}^{B}
+    \sum_{j=1}^{m}
+    \mathbf{I}\bigl(\lvert T_{j,b}^*\rvert \;\ge\; c\bigr).
+    $$ (i.e., the average number of “extreme” cases from permuted data.)
+
+5.  **The estimated FDR** associated with the threshold $c$ is $$
+    \widehat{\text{FDR}}(c)
+    \;=\;
+    \frac{\hat{V}}{R}.
+    $$
+
+```{r}
+m <- 200
+B <- 1000
+```
+
+```{r}
+set.seed(111)
+index <- sample(2308, m)
+T <- rep(NA, m)
+T.star <- matrix(NA, nrow=m, ncol=B)
+```
+
+```{r}
+for (j in 1:m){
+  k = index[j]
+  T[j] = t.test(x1[, k], x2[, k], var.equal = TRUE)$statistic
+  for (b in 1:B){
+    dat = sample(c(x1[, k], x2[, k]))
+    T.star[j, b] = t.test(dat[1:n1], dat[(n1+1) : (n1+n2)], var.equal = TRUE)$statistic
+  }
+}
+```
+
+```{r}
+c <- sort(abs(T))
+FDR <- R <- V <- rep(NA, m)
+for (j in 1:m) {
+R[j] <- sum(abs(T) >= c[j])
+V[j] <- sum(abs(T.star) >= c[j])/B
+FDR[j] <- V[j]/R[j]
+}
+plot(R, FDR, xlab="Number of Rejections", type="l",
+ylab="False Discovery Rate", col=4, lwd=3)
+```
+
+```{r}
+oo <- order(abs(T))
+R[oo] <- R
+FDR[oo] <- FDR
+alpha <- 0.1
+max(R[FDR <= alpha])
+sort(index[FDR <= alpha])
+```
+
+```{r}
+pval <- NULL
+for (j in 1:m) {
+  k <- index[j]
+  pval[j] <- t.test(x1[, k], x2[, k], var.equal=TRUE)$p.value
+}
+pBH <- p.adjust(pval, method="BH")
+data.frame(Reampling=round(FDR, 6), BH=round(pBH, 6))
+
+oo <- order(pBH)
+plot(FDR[oo], pBH[oo], pch=20, xlab="Reampling FDR",
+  ylab="BH procedure")
+abline(0, 1, col="red", lty=2)
+```
+
+## Manhanttan Plot
+
+셤 끝나고 ㄱㄱ

@@ -18,6 +18,17 @@ KIM SANG HYUN(202211545)
   - [Interpretation of FDR](#interpretation-of-fdr)
 - [False Discovery Rate](#false-discovery-rate)
 - [FDR vs FWER](#fdr-vs-fwer)
+- [How to Control FDR](#how-to-control-fdr)
+- [Benjamini-Hochberg procedure](#benjamini-hochberg-procedure)
+  - [■ Benjamini and Hochberg (BH)
+    Adjustment](#-benjamini-and-hochberg-bh-adjustment)
+- [Resampling Approach to Compute $p$
+  -value](#resampling-approach-to-compute-p--value)
+- [Resampling Approach to control
+  FDR](#resampling-approach-to-control-fdr)
+  - [Plug-In FDR for a two-sided
+    test](#plug-in-fdr-for-a-two-sided-test)
+- [Manhanttan Plot](#manhanttan-plot)
 
 ``` r
 library(multtest)
@@ -1185,3 +1196,681 @@ $$
 \text{FDR} = E({V \over R}|R>0)P(R>0) + E({V \over R} | R = 0)P(R = 0) \newline 
 = E({V \over R}|R >0)P(R>0)
 $$
+
+> $R$ =0, 즉, 하나도 reject가 안된 경우 FDR을 구하기 힘들다.
+
+- If we assume that nulls $H_0$ are tre then $V = R$, hence
+
+$$
+FDR = P(P \ge 1) => \text{FDR = FWER}
+$$
+
+- With FWER, we want to limit the probability of making even a ‘single’
+  mistake.
+
+- On the other hand, FDR explicitly allows us to make some mistakes.
+
+## How to Control FDR
+
+- 우리는 BH procedure만 수행한다..!
+
+## Benjamini-Hochberg procedure
+
+### ■ Benjamini and Hochberg (BH) Adjustment
+
+① Let $p_{(1)}, \ldots, p_{(m)}$ denote the ordered observed *p*-values
+such that: $$
+p_{(1)} \leq p_{(2)} \leq \cdots \leq p_{(m)} -> \text{어디서 cut 할까?}
+$$ and let the corresponding null hypotheses be given by  
+$$
+H_0^{(1)}, H_0^{(2)}, \ldots, H_0^{(m)}.
+$$
+
+② Define  
+$$
+k = \max \left\{ i : p_{(i)} \leq \frac{i}{m} q \right\}
+$$
+
+$$
+P_{(i)} {m \over i} < q
+$$
+
+> FDR은 모든 p-value p(i)가 Null이라고 생각한거임.
+
+where $q$ is the level at which we want to control the FDR.
+($q = 0.1, 0.05, 0.2....$)
+
+③ Reject  
+$$
+H_0^{(1)}, H_0^{(2)}, \ldots, H_0^{(k)}.
+$$
+
+- We can also get adjusted $p$-values for the $i$-th test by letting
+
+$$
+p_i^* = p_i{m \over i}
+$$
+
+- However after this adjustment the adjusted $p$-values may on longer be
+  strictly increasing, hence you would go through and fix that up with
+
+$$
+p_i^{**} = min_{j \ge i} p_j^*
+$$
+
+> 나는 FDR를 10% 이내로 control하고 싶어 -\> $p_i^{**}$가 0.1보다 작은
+> 거 다 reject ㄱㄱ
+
+``` r
+data(golub, package = "multtest")
+golubFactor <- factor(golub.cl,levels=0:1,labels= c("ALL","AML"))
+```
+
+``` r
+pval <- NULL
+m <- nrow(golub)
+for (i in 1:m) {
+  pval[i] <- t.test(golub[i, ] ~ golubFactor)$p.val
+}
+```
+
+``` r
+pj <- p.adjust(pval, method="bonferroni")
+pBH <- p.adjust(pval, method="BH")
+c(sum(pj < 0.05), sum(pBH < 0.05)) # 여기서 0.05는 q?
+```
+
+    ## [1] 103 695
+
+- `sum(pBH < 0.05)` : FDR을 5% 이내로 유지하겠다 라난 뜻..
+
+``` r
+695 * 0.05 # FP의 수는 34.75개 정도가 나올 것이다. 그 이상 나오면 안됨.
+```
+
+    ## [1] 34.75
+
+``` r
+q <- 0.05
+poo <- sort(pval)
+wh <- which(poo < q*(1:m)/m)
+whh <- 1:max(wh)
+```
+
+``` r
+plot(poo, pch=20, ylab="P-values", xlab="Genes", main="")
+points(whh, poo[whh], col=4, pch=20)
+abline(a=0, b=q/m, col=2)
+abline(h=q/m, col="darkgreen")
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+top <- 1000
+poot <- poo[1:top]
+plot(poot, pch=20, ylab="P-values", xlab="Genes", main="")
+points(whh, poot[whh], col=4, pch=20)
+abline(a=0, b=q/m, col=2)
+abline(h=q/m, col="darkgreen")
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+
+## Resampling Approach to Compute $p$ -value
+
+- One representative resampling approach to compute an empirical
+  $p$-value is permutation.
+
+- 검정 통계량이 t-분포를 따른다는 보장이 없고 데이터가 정규성을
+  안따르거나 그러한 상황일때 $p$-value를 계산하기 위해..
+
+``` r
+library(ISLR2)
+data(Khan)
+?Khan
+str(Khan)
+```
+
+    ## List of 4
+    ##  $ xtrain: num [1:63, 1:2308] 0.7733 -0.0782 -0.0845 0.9656 0.0757 ...
+    ##   ..- attr(*, "dimnames")=List of 2
+    ##   .. ..$ : chr [1:63] "V1" "V2" "V3" "V4" ...
+    ##   .. ..$ : NULL
+    ##  $ xtest : num [1:20, 1:2308] 0.14 1.164 0.841 0.685 -1.956 ...
+    ##   ..- attr(*, "dimnames")=List of 2
+    ##   .. ..$ : chr [1:20] "V1" "V2" "V4" "V6" ...
+    ##   .. ..$ : NULL
+    ##  $ ytrain: num [1:63] 2 2 2 2 2 2 2 2 2 2 ...
+    ##  $ ytest : num [1:20] 3 2 4 2 1 3 4 2 3 1 ...
+
+``` r
+attach(Khan)
+x <- rbind(xtrain , xtest)
+y <- c(as.numeric(ytrain), as.numeric(ytest))
+dim(x)
+```
+
+    ## [1]   83 2308
+
+``` r
+table(y)
+```
+
+    ## y
+    ##  1  2  3  4 
+    ## 11 29 18 25
+
+``` r
+x <- as.matrix(x)
+x1 <- x[which(y == 2), ]
+x2 <- x[which(y == 4), ]
+n1 <- nrow(x1)
+n2 <- nrow(x2)
+```
+
+``` r
+k <- 11 # 11번째 gene 선택
+
+# 정규성 검정
+shapiro.test(x1[, k])
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  x1[, k]
+    ## W = 0.97512, p-value = 0.7041
+
+``` r
+shapiro.test(x2[, k])
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  x2[, k]
+    ## W = 0.96258, p-value = 0.4681
+
+``` r
+# 등분산성 검정
+bartlett.test(c(x1[,k], x2[,k]) ~ rep(1:2, c(n1, n2)))
+```
+
+    ## 
+    ##  Bartlett test of homogeneity of variances
+    ## 
+    ## data:  c(x1[, k], x2[, k]) by rep(1:2, c(n1, n2))
+    ## Bartlett's K-squared = 0.56415, df = 1, p-value = 0.4526
+
+``` r
+t.out <- t.test(x1[, k], x2[, k], var.equal=TRUE)
+t.out$statistic
+```
+
+    ##         t 
+    ## -2.093633
+
+``` r
+t.out$p.value
+```
+
+    ## [1] 0.04118644
+
+``` r
+# resampling
+set.seed(1)
+B = 10000
+T = rep(NA, B)
+for (j in 1:B){
+  dat = sample(c(x1[, k], x2[, k]))
+  T[j] = t.test(dat[1:n1], dat[(n1 + 1) : (n1 + n2)], var.equal = TRUE)$statistic
+}
+(sum(abs(T) >= abs(t.out$statistic))+1)/(B+1)
+```
+
+    ## [1] 0.04169583
+
+``` r
+hist(T, breaks=100, xlim=c(-4.2, 4.2), main="",
+xlab="Null Distribution of Test Statistic", col=7)
+x0 <- seq(-4.2, 4.2, len=1000)
+y0 <- dt(seq(-4.2, 4.2, len=1000), df=(n1 + n2 - 2))
+lines(x0, y0*1000, col=2, lwd=3)
+TT <- t.out$statistic
+abline(v=-TT, col=4, lty=2, lwd=2)
+abline(v=TT, col=4, lty=2, lwd=2)
+text(TT-1, 350, paste("T = ", round(TT, 4), sep=""), col=4)
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+``` r
+sum(T <= - abs(t.out$statistic))
+```
+
+    ## [1] 205
+
+``` r
+sum(T >= abs(t.out$statistic))
+```
+
+    ## [1] 211
+
+``` r
+k <- 877
+shapiro.test(x1[, k])
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  x1[, k]
+    ## W = 0.55227, p-value = 2.864e-08
+
+``` r
+shapiro.test(x2[, k])
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  x2[, k]
+    ## W = 0.86905, p-value = 0.00414
+
+``` r
+bartlett.test(c(x1[,k], x2[,k]) ~ rep(1:2, c(n1, n2)))
+```
+
+    ## 
+    ##  Bartlett test of homogeneity of variances
+    ## 
+    ## data:  c(x1[, k], x2[, k]) by rep(1:2, c(n1, n2))
+    ## Bartlett's K-squared = 10.228, df = 1, p-value = 0.001383
+
+``` r
+T <- rep(NA, B)
+set.seed(2)
+for (j in 1:B) {
+    dat <- sample(c(x1[, k], x2[, k]))
+    T[j] <- t.test(dat[1:n1], dat[(n1 + 1):(n1 + n2)],
+        var.equal=FALSE)$statistic
+}
+```
+
+``` r
+t.out <- t.test(x1[, k], x2[, k], var.equal=FALSE)
+t.out$p.value
+```
+
+    ## [1] 0.5548013
+
+``` r
+(sum(abs(T) >= abs(t.out$statistic))+1)/(B+1)
+```
+
+    ## [1] 0.6553345
+
+``` r
+hist(T, breaks=100, xlim=c(-2.9, 2.9), main="",
+xlab="Null Distribution of Test Statistic", col=7)
+x0 <- seq(-2.9, 2.9, len=1000)
+y0 <- dt(seq(-2.9, 2.9, len=1000), df=(n1 + n2 - 2))
+lines(x0, y0*500, col=2, lwd=3)
+TT <- t.out$statistic
+abline(v=-TT, col=4, lty=2, lwd=2)
+abline(v=TT, col=4, lty=2, lwd=2)
+text(TT-1, 200, paste("T = ", round(TT, 4), sep=""), col=4)
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+
+``` r
+sum(T <= - abs(t.out$statistic))
+```
+
+    ## [1] 3346
+
+``` r
+sum(T >= abs(t.out$statistic))
+```
+
+    ## [1] 3207
+
+![](images/clipboard-2650654288.png)
+
+## Resampling Approach to control FDR
+
+- In order to estimate the FDR via resampling, we make the follow approx
+
+$$
+\text{FDR} = E({V \over R}) \approx {E(V) \over R}
+$$
+
+- where the total number of rejections $R$
+
+$$
+R = \sum^m_{j=1}{I}(|T_j| \gt c)
+$$
+
+- with a threshold $c$.
+
+![](images/clipboard-2913967207.png)
+
+1.  $V$: 실제로는 귀무가설이 참인 가설들 중, 우리가 잘못 기각해 버린
+    것들의 총수 (FP)
+2.  $E(V)$: 그 “거짓 기각된 것들”의 기댓값..
+
+- 하지만 문제는 우리가 실제로는 어떤 H_0가 참인지 모른다는 점..
+
+- 그래서 Resampling을 통한 귀무가설이 참일 때 데이터를 만들어보자..!
+
+### Plug-In FDR for a two-sided test
+
+1.  **Select a threshold** $c > 0$.
+
+2.  **For** $j = 1, \ldots, m$ (i.e., for each test):
+
+    1.  Compute the observed test statistic $T_j$ based on **original
+        data**.
+    2.  For $b = 1, \ldots, B$, compute the test statistic $T_{j,b}^*$
+        based on the $b$-th permuted data.
+
+3.  **Compute** $$
+    R \;=\; \sum_{j=1}^{m} \mathbf{I}\bigl(\lvert T_j\rvert \;\ge\; c\bigr).
+    $$ (i.e., the number of rejected hypotheses under threshold $c$.)
+
+4.  **Compute** $$
+    \hat{V}
+    \;=\;
+    \frac{1}{B}
+    \sum_{b=1}^{B}
+    \sum_{j=1}^{m}
+    \mathbf{I}\bigl(\lvert T_{j,b}^*\rvert \;\ge\; c\bigr).
+    $$ (i.e., the average number of “extreme” cases from permuted data.)
+
+5.  **The estimated FDR** associated with the threshold $c$ is $$
+    \widehat{\text{FDR}}(c)
+    \;=\;
+    \frac{\hat{V}}{R}.
+    $$
+
+``` r
+m <- 200
+B <- 1000
+```
+
+``` r
+set.seed(111)
+index <- sample(2308, m)
+T <- rep(NA, m)
+T.star <- matrix(NA, nrow=m, ncol=B)
+```
+
+``` r
+for (j in 1:m){
+  k = index[j]
+  T[j] = t.test(x1[, k], x2[, k], var.equal = TRUE)$statistic
+  for (b in 1:B){
+    dat = sample(c(x1[, k], x2[, k]))
+    T.star[j, b] = t.test(dat[1:n1], dat[(n1+1) : (n1+n2)], var.equal = TRUE)$statistic
+  }
+}
+```
+
+``` r
+c <- sort(abs(T))
+FDR <- R <- V <- rep(NA, m)
+for (j in 1:m) {
+R[j] <- sum(abs(T) >= c[j])
+V[j] <- sum(abs(T.star) >= c[j])/B
+FDR[j] <- V[j]/R[j]
+}
+plot(R, FDR, xlab="Number of Rejections", type="l",
+ylab="False Discovery Rate", col=4, lwd=3)
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+
+``` r
+oo <- order(abs(T))
+R[oo] <- R
+FDR[oo] <- FDR
+alpha <- 0.1
+max(R[FDR <= alpha])
+```
+
+    ## [1] 41
+
+``` r
+sort(index[FDR <= alpha])
+```
+
+    ##  [1]   50  246  268  336  388  408  415  518  554  696  713  795  797  979 1021
+    ## [16] 1030 1049 1094 1158 1187 1481 1542 1640 1734 1738 1740 1772 1855 1917 1929
+    ## [31] 1980 1994 2060 2088 2115 2117 2143 2148 2168 2228 2234
+
+``` r
+pval <- NULL
+for (j in 1:m) {
+  k <- index[j]
+  pval[j] <- t.test(x1[, k], x2[, k], var.equal=TRUE)$p.value
+}
+pBH <- p.adjust(pval, method="BH")
+data.frame(Reampling=round(FDR, 6), BH=round(pBH, 6))
+```
+
+    ##     Reampling       BH
+    ## 1    0.506800 0.502794
+    ## 2    0.004286 0.004715
+    ## 3    0.802458 0.791428
+    ## 4    0.962562 0.959705
+    ## 5    0.005684 0.005969
+    ## 6    0.849848 0.847996
+    ## 7    0.763126 0.761600
+    ## 8    0.724054 0.717167
+    ## 9    0.850124 0.847867
+    ## 10   0.751799 0.750335
+    ## 11   0.961668 0.959705
+    ## 12   0.888747 0.882321
+    ## 13   0.878613 0.877319
+    ## 14   0.234017 0.234032
+    ## 15   0.500237 0.500152
+    ## 16   0.484244 0.483880
+    ## 17   0.329338 0.330997
+    ## 18   0.723955 0.722609
+    ## 19   0.905989 0.902521
+    ## 20   0.027864 0.030689
+    ## 21   0.005533 0.005620
+    ## 22   0.312097 0.313698
+    ## 23   0.064444 0.067991
+    ## 24   0.820338 0.813374
+    ## 25   0.798039 0.791428
+    ## 26   0.060212 0.064043
+    ## 27   0.197193 0.196828
+    ## 28   0.848941 0.846569
+    ## 29   0.627108 0.622280
+    ## 30   0.653333 0.643875
+    ## 31   0.014900 0.016308
+    ## 32   0.806054 0.791428
+    ## 33   0.824845 0.823061
+    ## 34   0.782799 0.770836
+    ## 35   0.084474 0.087202
+    ## 36   0.407198 0.408487
+    ## 37   0.005812 0.005620
+    ## 38   0.329699 0.330997
+    ## 39   0.112545 0.113586
+    ## 40   0.829403 0.813374
+    ## 41   0.717496 0.715764
+    ## 42   0.041458 0.045094
+    ## 43   0.250984 0.251209
+    ## 44   0.515376 0.515461
+    ## 45   0.112349 0.113586
+    ## 46   0.078595 0.082185
+    ## 47   0.293364 0.295084
+    ## 48   0.798671 0.791428
+    ## 49   0.806121 0.791428
+    ## 50   0.452271 0.453335
+    ## 51   0.918299 0.911916
+    ## 52   0.200414 0.200412
+    ## 53   0.918495 0.911916
+    ## 54   0.889625 0.886325
+    ## 55   0.085795 0.088082
+    ## 56   0.177958 0.173076
+    ## 57   0.731031 0.717167
+    ## 58   0.373788 0.375476
+    ## 59   0.125511 0.126927
+    ## 60   0.723595 0.717167
+    ## 61   0.713455 0.711994
+    ## 62   0.000571 0.001113
+    ## 63   0.920599 0.918805
+    ## 64   0.777809 0.770836
+    ## 65   0.260794 0.261074
+    ## 66   0.367662 0.369018
+    ## 67   0.507691 0.502794
+    ## 68   0.651769 0.645570
+    ## 69   0.065029 0.067891
+    ## 70   0.801359 0.791428
+    ## 71   0.001600 0.001770
+    ## 72   0.047643 0.050797
+    ## 73   0.725750 0.717167
+    ## 74   0.047385 0.050797
+    ## 75   0.645783 0.645570
+    ## 76   0.921828 0.918805
+    ## 77   0.085950 0.088082
+    ## 78   0.005588 0.005620
+    ## 79   0.001750 0.001626
+    ## 80   0.966010 0.959705
+    ## 81   0.200264 0.196828
+    ## 82   0.822264 0.813374
+    ## 83   0.821235 0.819506
+    ## 84   0.568565 0.567955
+    ## 85   0.904718 0.902521
+    ## 86   0.048560 0.050797
+    ## 87   0.063886 0.067891
+    ## 88   0.500946 0.500152
+    ## 89   0.369795 0.370992
+    ## 90   0.173431 0.173076
+    ## 91   0.106238 0.108205
+    ## 92   0.485614 0.481146
+    ## 93   0.090659 0.092625
+    ## 94   0.489563 0.481146
+    ## 95   0.162978 0.162682
+    ## 96   0.002182 0.002349
+    ## 97   0.560028 0.559587
+    ## 98   0.311000 0.312190
+    ## 99   0.958549 0.956882
+    ## 100  0.000200 0.000017
+    ## 101  0.575064 0.574741
+    ## 102  0.200618 0.196828
+    ## 103  0.000167 0.000129
+    ## 104  0.176320 0.173076
+    ## 105  0.570138 0.569328
+    ## 106  0.201148 0.196828
+    ## 107  0.462116 0.462534
+    ## 108  0.005389 0.005620
+    ## 109  0.409723 0.411097
+    ## 110  0.650445 0.645570
+    ## 111  0.000250 0.000011
+    ## 112  0.308353 0.307867
+    ## 113  0.506170 0.506859
+    ## 114  0.051310 0.053927
+    ## 115  0.888831 0.886325
+    ## 116  0.053867 0.056062
+    ## 117  0.004083 0.004342
+    ## 118  0.004231 0.004342
+    ## 119  0.481315 0.481146
+    ## 120  0.798523 0.796349
+    ## 121  0.537943 0.537521
+    ## 122  0.876262 0.875055
+    ## 123  0.308687 0.307867
+    ## 124  0.801305 0.791428
+    ## 125  0.053226 0.056062
+    ## 126  0.652876 0.652510
+    ## 127  0.047741 0.050797
+    ## 128  0.278477 0.279558
+    ## 129  0.992265 0.991964
+    ## 130  0.777876 0.770836
+    ## 131  0.564916 0.564629
+    ## 132  0.913703 0.911916
+    ## 133  0.884011 0.882321
+    ## 134  0.371105 0.369018
+    ## 135  0.633389 0.633302
+    ## 136  0.510104 0.502794
+    ## 137  0.718923 0.717167
+    ## 138  0.000000 0.000000
+    ## 139  0.001556 0.001626
+    ## 140  0.523549 0.523207
+    ## 141  0.643802 0.643875
+    ## 142  0.782471 0.770836
+    ## 143  0.951635 0.950074
+    ## 144  0.306529 0.307867
+    ## 145  0.652795 0.652510
+    ## 146  0.914601 0.911916
+    ## 147  0.307841 0.307867
+    ## 148  0.502663 0.502794
+    ## 149  0.038087 0.041623
+    ## 150  0.953826 0.950074
+    ## 151  0.781210 0.770836
+    ## 152  0.369709 0.371204
+    ## 153  0.802973 0.791428
+    ## 154  0.727763 0.722609
+    ## 155  0.014190 0.016308
+    ## 156  0.737008 0.735720
+    ## 157  0.953288 0.950074
+    ## 158  0.820299 0.813374
+    ## 159  0.777654 0.770836
+    ## 160  0.945111 0.943323
+    ## 161  0.000000 0.000000
+    ## 162  0.177265 0.173076
+    ## 163  0.411159 0.411097
+    ## 164  0.825451 0.813374
+    ## 165  0.533553 0.530655
+    ## 166  0.199786 0.196828
+    ## 167  0.165319 0.165167
+    ## 168  0.789727 0.787602
+    ## 169  0.360520 0.361637
+    ## 170  0.247852 0.248015
+    ## 171  0.806260 0.791428
+    ## 172  0.000000 0.000001
+    ## 173  0.622830 0.622280
+    ## 174  0.817316 0.813374
+    ## 175  0.715218 0.713356
+    ## 176  0.772577 0.770836
+    ## 177  0.504223 0.502794
+    ## 178  0.961264 0.959705
+    ## 179  0.939516 0.937462
+    ## 180  0.173923 0.173597
+    ## 181  0.967487 0.966491
+    ## 182  0.652576 0.645570
+    ## 183  0.793438 0.791428
+    ## 184  0.261609 0.261921
+    ## 185  0.961843 0.960583
+    ## 186  0.057531 0.060160
+    ## 187  0.815400 0.813374
+    ## 188  0.799269 0.797223
+    ## 189  0.649365 0.643875
+    ## 190  0.490011 0.490177
+    ## 191  0.422464 0.423933
+    ## 192  0.235550 0.235286
+    ## 193  0.824512 0.813374
+    ## 194  0.822611 0.820960
+    ## 195  0.511030 0.506859
+    ## 196  0.801727 0.796349
+    ## 197  0.531423 0.530655
+    ## 198  0.822845 0.813374
+    ## 199  0.890911 0.888282
+    ## 200  0.891056 0.886325
+
+``` r
+oo <- order(pBH)
+plot(FDR[oo], pBH[oo], pch=20, xlab="Reampling FDR",
+  ylab="BH procedure")
+abline(0, 1, col="red", lty=2)
+```
+
+![](Lecture3---Multiple-Testing-Procedure_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+## Manhanttan Plot
+
+셤 끝나고 ㄱㄱ
