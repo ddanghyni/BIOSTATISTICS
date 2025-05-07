@@ -213,7 +213,7 @@ df2 <- g$df
 df3 <- df.residual(g)
 c(df1, df2, df3)
 print("====================================================")
-summary(g)$sigma^2 # MSE
+summary(g)$sigma^2 # MSE, summary(g)$sigma -> sqrt(mse)
 print("====================================================")
 sum(g$res^2)/g$df
 print("====================================================")
@@ -225,7 +225,393 @@ anova(g)$Sum # SSR, SSE 각각
 print("====================================================")
 sum(anova(g)$Sum) # SST
 print("====================================================")
-summary(g)
+
 print("====================================================")
 names(summary(g))
+
 ```
+
+### R Squared
+
+-   The coefficient of determination $R^2$ is number between 0 and 1 that indicates
+
+-   How well the data points fit the statistical model.
+
+> 그니깐 나의 모델이 주어진 데이터에 얼마나 적합한지...를 나타내는 측도..
+
+$$
+R^2 = 1 - {\text{SSE}\over\text{SST}}
+$$
+
+> 1에 가까울수록 나의 모델이 데이터에 잘 맞다는 뜻... -\> 즉 뺴지는 텀의 분자가 작을 수록
+>
+> 즉, SSE가 작을수록 -\> 회귀 모델로 설명하지 못하는 부분이 작을수록..
+
+-   In gneneral, as we keep adding predictor variables to our model,
+
+-   the $R^2$ will impove
+
+> feature가 늘어나면 늘어날 수록 R 값은 무조건 1에 가까워짐!
+>
+> 이걸 방지하기 위해서 feature의 수가 늘어나면 패널티를 주는 adjusted $R^2$을 쓰자..!
+
+```{r}
+summary(g)$r.squared
+summary(g)$adj.r.squared # adj-r^2
+```
+
+### F test Statistic
+
+```{r}
+names(summary(g))
+summary(g)$fstat
+```
+
+### Multiple linear Regression
+
+![](images/clipboard-1567527149.png)
+
+-   We interpret $\beta_j$ as the average effect on $y$ of one unit increase in $x_j$ , **holding all other predictors fixed**.
+
+-   여기서 feature들 간의 상관관계가 없는게 가장 이상적이다..
+
+-   상관관계가 있으면 회귀계수를 추정할때 상관이 있는 변수의 유무에 따라 계수의 값이 변할 수 있기 때문이다.
+
+-   변수들간의 상관관계가 있으면..
+
+    -   The variance of all coefficients tends to increase..
+
+    -   Interpertations become hazardous..
+
+![](images/clipboard-1367441817.png)
+
+-   RSS는 simple linear regression에서 단순히 추정할 회귀계수가 늘어날 뿐이다..
+
+-   The unbiased estiamte of $\sigma^2$ is
+
+$$
+\hat{\sigma^2} = {\text{RSS}\over{n-p-1}} = \text{MSE}
+$$
+
+-   이때 p는 number of parameter이다.
+
+### Overall F-test in ANOVA table
+
+-   Hypothesis
+
+    -   $H_0 : \beta_1 = ... = \beta_p = 0$
+
+    -   $H_1:$ At least one $\beta_j$ is not equal to 0.
+
+> 당연이 귀무가설 기각하지 못하면 $y= \beta_0 + e$
+
+![](images/clipboard-870843951.png)
+
+```{r}
+x1 <- golub[grep("Gdf5", golub.gnames[,2], ignore.case=TRUE),]
+x2 <- golub[grep("CCND3", golub.gnames[,2], ignore.case=TRUE),]
+x3 <- golub[grep("Nkr", golub.gnames[, 2], ignore.case=TRUE),]
+x4 <- golub[grep("IGFBP5",golub.gnames[,2], ignore.case = TRUE),]
+data <- data.frame(Gdf5=x1, CCND3=x2, Nkr=x3, IGFBP5=x4, cmyb=y)
+data
+```
+
+-   `lm(cmyb ~ . , data)`
+
+    -   data라는 df 안에서 cmyb는 y(target)으로 \~ . (df 안에 있는 나머지)는 feature로..
+
+```{r}
+g2 <- lm(cmyb ~ ., data) 
+print("=====================================")
+summary(g2)
+print("=====================================")
+summary(g2)$coef
+print("=====================================")
+confint(g2) # confidence interval of coefficients
+```
+
+```{r}
+n <- length(x)
+p <- 4
+df1 <- n - p - 1
+df2 <- g2$df
+df3 <- df.residual(g2) # degree of freedom of residuals
+c(df1, df2, df3)
+```
+
+```{r}
+summary(g)$sigma
+summary(g)$sigma^2
+```
+
+```{r}
+g0 <- lm(cmyb ~ 1, data) # intercept model (udner H_0)
+summary(g0)
+```
+
+```{r}
+anova(g0, g2) # compare intercept model and full model
+# > if H_0 is not rejected => intercept model is goood
+```
+
+```{r}
+summary(g2)$fstat
+```
+
+```{r}
+anova(g2)
+```
+
+```{r}
+sum(anova(g2)$F, na.rm = TRUE)/4
+```
+
+```{r}
+cor(data)
+SLR <- vector("list", length=3)
+names(SLR) <- c("bhat", "rsq", "sigma")
+for (k in 1:(ncol(data)-1)) {
+  g0 <- lm(data$cmyb ~ data[,k])
+  SLR$bhat[k] <- coef(g0)[2] # \hat\beta_1
+  SLR$rsq[k] <- summary(g0)$r.squared
+  SLR$sigma[k] <- summary(g0)$sigma
+}
+SLR
+```
+
+```{r}
+SLR
+
+data.frame(MLR=coef(g2)[-1], SLR=SLR$bhat)
+data.frame(MLR=summary(g2)$r.squared, SLR=SLR$rsq)
+data.frame(MLR=summary(g2)$sigma, SLR=SLR$sigma)
+```
+
+```{r}
+x0 <- data.frame(Gdf5=median(x1), CCND3=median(x2),
+Nkr=median(x3), IGFBP5=median(x4))
+x0
+predict(g2, x0)
+```
+
+```{r}
+# 각 simple model에서의 예측값..
+pred <- NULL
+for (k in 1:length(x0)) {
+  g0 <- lm(data$cmyb ~ data[,k])
+  pred[k] <- sum(coef(g0)[1] + x0[k]*coef(g0)[2])
+}
+pred
+```
+
+## 2. Linear model with a factor
+
+> $y$는 연속형이지만 , $X$가 범주형일 때.. -\> factor 처리 ㄱㄱㅎ!
+
+-   Example : Modeling 3 groups of genes..
+
+    -   Suppose we have the following artificial gene expression values : 2, 3, 1, 2 in group 1
+
+    -   8, 7, 9, 8 in Group 2, and 11, 12, 13, 12 in group 3
+
+```{r}
+y <- c(2, 3, 1, 2, 8, 7, 9, 8, 11, 12, 13, 12)
+factor <- gl(3, 4) # 4개 씩 3 그룹?
+factor
+```
+
+```{r}
+data.frame(x = factor, y = y)
+model.matrix(y ~ factor - 1) # no intercept term
+```
+
+```{r}
+lm(y ~ factor - 1)$coef # 평균...
+```
+
+```{r}
+summary(lm(y ~ factor - 1))$coef
+```
+
+$$
+\hat{y} = 2x_1 + 8x_2 + 12x_3
+$$
+
+-   여기에 (1, 0, 0) 대입해보자... -\> group의 평균이 나온다.
+
+## 3. One-way ANOVA
+
+-   A frequent problem is that of testing the null hypo that three or more population means are equal to each other.
+
+-   ANOVA can perform this test by comparing **within group variance** to **between group variances**.
+
+-   Null hypothesis
+
+$$
+H_0 : \mu_1 = \mu_2 = ... = \mu_k
+$$
+
+> 여기서 주의!! = 0 인 term이 없다!! 즉 F 검정과 다르다..!!
+>
+> 0인지 아닌지는 신경 안쓰고 단순히 그룹 간의 평균이 같냐 아니냐만 판단....
+
+-   The three sample means per patient group $\bar{y_j}$ and the overall mean $\bar{y}$ can be calculated by :
+
+$$
+\bar{y_j} = {1\over n}\sum_{i=1}^{n}y_{ij} \quad \text{for}\quad j = 1, 2, 3 
+$$
+
+> 각 집단 별 평균
+
+$$
+\bar{y} = {1\over n}(\sum_{j=1}^3\sum_{i=1}^ny_{ij})
+$$
+
+> 전체 평균
+
+-   Sum of squares within (SSW) : 그룹 안에서의 변동
+
+$$
+\text{SSW} = \sum_{j=1}^{g}\sum_{i=1}^{n}(y_{ij}-\bar{y_j})^2
+$$
+
+> g : is number of groups
+
+-   Sum of squares between (SSB) : 그룹 간의 변동
+
+$$
+\text{SSB} = \sum_{j=1}^{g}\sum_{i=1}^n(\bar{y_j}-\bar{y})^2
+$$
+
+-   F-statististic
+
+$$
+f = {\text{SSB}/(g-1)\over\text{SSW} / (N-g)}
+$$
+
+> 자자 식을 보면 SSB 즉 그룹 간의 변동이 작으면 F 값이 작아져서 귀무가설을 기각 못하고 그럼 그룹들의 평균은 같다라는 결론..
+
+![](images/clipboard-3169972116.png)
+
+![](images/clipboard-3610410082.png){width="50%"}
+
+> 아노바는 반드시 동분산 가정이 성립 되어야지만 사용 할 수 있다...!
+
+![](images/clipboard-2472942022.png)
+
+```{r}
+set.seed(123)
+y <- c(rnorm(10, -1, 1), rnorm(10, 0, 1), rnorm(10, 1, 1))
+y
+factor <- gl(3, 10)
+factor
+```
+
+```{r}
+model.matrix(y ~ factor - 1)
+model.matrix(y ~ factor)
+```
+
+```{r}
+g1 <- lm(y ~ factor - 1)
+g2 <- lm(y ~ factor)
+```
+
+```{r}
+summary(g1)$coef
+print("======================================================")
+summary(g2)$coef
+```
+
+```{r}
+g1$coef[2] - g1$coef[1]
+g1$coef[3] - g1$coef[1]
+```
+
+```{r}
+anova(g1)
+print("======================================================")
+anova(g2)
+```
+
+![](images/clipboard-3558157797.png)
+
+```{r}
+c(summary(g1)$sigma, summary(g2)$sigma)
+cbind(residuals(g1), residuals(g2))
+```
+
+> 그래 이제 mu_2 - mu1 = beta_1인건 알겠어.. 그럼 다른건??? 예를 들어 mu_3 - mu_2 같은 거....
+
+```{r}
+factor <- relevel(factor, ref=2)
+model.matrix(y ~ factor)
+g3 <- lm(y ~ factor)
+```
+
+```{r}
+summary(g3)$coef
+```
+
+```{r}
+factor <- relevel(factor, ref=3)
+g_tmp <- lm(y ~ factor)
+summary(g_tmp)$coef
+```
+
+```{r}
+summary(g2)$coef
+summary(g3)$coef
+anova(g2)
+anova(g3)
+```
+
+> F-value는 똑같다,,
+
+```{r}
+factor = gl(3, 10)
+summary(lm(y ~ factor))
+anova(lm(y ~ factor))
+```
+
+### All Pairwise Test
+
+-   모든 가능한 그룹 쌍에 대해 가설을 각각 검정
+
+$$
+H_0 : \mu_i = \mu_j
+$$
+
+```{r}
+pairwise.t.test(y, factor, p.adjust.method="bonferroni")
+pairwise.t.test(y, factor, p.adjust.method="holm")
+```
+
+```{r}
+TukeyHSD(aov(y ~ factor))
+plot(TukeyHSD(aov(y ~ factor)))
+```
+
+-   Example: No difference between the means
+
+```{r}
+set.seed(1234)
+y <- rnorm(30, 1.9, 1)
+y
+factor <- gl(3, 10)
+g <- lm(y ~ factor)
+anova(g)
+pairwise.t.test(y, factor, p.adjust.method="bonferroni")
+TukeyHSD(aov(g))
+plot(TukeyHSD(aov(g)))
+```
+
+### Example of One-way ANOVA
+
+## 4. Multiple testing for ANOVA
+
+## 5. Checking assumptions
+
+## 6. Robust tests
+
+## 7. Two-way ANOVA
