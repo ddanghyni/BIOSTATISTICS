@@ -1,0 +1,231 @@
+---
+title: 'Lecture4 : Linear Models'
+author: "KIM SANG HYUN(202211545)"
+date: "2025-05-06"
+output: 
+  github_document:
+    toc: yes
+---
+
+```{r}
+library(multtest)
+library(ALL)
+library(lmtest)
+```
+
+## 01. Introduction to linear Models
+
+-   We learned how statistical tests can be used to discover genes with different means with respect to **two groups**.
+
+-   We'll learn how to perform similar tests between **three or more groups**.
+
+-   A technique is called **analysis of variance (ANOVA)**
+
+> 다중집단 비교해보자!! by ANOVA
+
+-   ANOVA is based on the assumption that gene expression values are
+
+    -   Normally distributed
+
+    -   Have Equal variance (homogeneity)
+
+        > 집단 간의 분산이 같아야 한다..
+
+-   across the groups of patients, samples, or experiments.
+
+### Definition of Linear Models
+
+-   Given a continuous value of $y_i$, a basic form of the linear model is :
+
+$$
+y_i = \beta_0 + x_i\beta_1 + e_i, \text{for i = 1,...,n}
+$$
+
+$$
+e \text{~} N(0,\sigma^2)
+$$
+
+-   It's commonly assumed that the error variables $e_1,...,e_n$ are **independent and normally distributed** with zero mean!!
+
+$$
+y_i \text{~}N(\beta_0 + x_i\beta_1,\sigma^2)
+$$
+
+### Least Square Regression Fit
+
+-   The LS regression line provides the best fit of the data points.
+
+> RSS, 즉 residual의 합을 가\~\~장 작게 만들어주는 그 선의 기울기와 절편!
+
+![](images/clipboard-1768613021.png)
+
+### Residual Sum of Squares (RSS, SSE)
+
+-   Let $\hat{y_i} = \hat{\beta_0} + \hat{\beta_1x_i}$ be the prediction for $Y$ based on the $i$th value of $X$. Then,
+
+$$
+e_i = y_i - \hat{y_i}
+$$
+
+-   represents the $i$th **residual**.
+
+-   We define the RSS as
+
+$$
+\text{RSS} = \sum_{i=1}^{n} e_i^2 = \sum_{i=1}^{n}(y_i - \hat{y_i})^2
+$$
+
+### Least Square Estimation
+
+-   위에서 언급한 RSS를 가장 작게 만들어주는 $\beta_1, \beta_2$를 구하자..!
+
+$$
+(\hat{\beta_0}, \hat{\beta^1}) = \text{argmin}_{\beta_0,\beta_1} RSS
+$$
+
+### Hypothesis Testing
+
+-   If one wish to ony estimate $\beta_0, \beta_1$ , it is \*\*not essential to assume any distirbutional form\*\* for the errors!
+
+> 회귀계수만 추정할때는 에러가 정규성 가성 따를 필요없음!! 걍 미분 박는거니깐..
+
+-   For confidence intervals or hypothesis tests, one need to assume that the errors are \*\*normally distributed\*\*.
+
+> 하지만 회귀계수의 검정이나 신뢰구간을 구할 때는 T 분포 등을 이용하므로 정규성 검정을 꼭해야한다..!
+
+-   Mathematically, this corresponds to testing
+
+$$
+H_0 : \beta_1 = 0  \quad \text{VS}\quad H_1 : \beta_1 \neq 0
+$$
+
+-   since if $\beta_1 = 0$ (귀무가설 기각 못함.. t-stat이 작음 -\> pv가 0.05보다 큼) then the model reduces to
+
+$$
+Y = \beta_0 + e
+$$
+
+-   and $X$ is not associated with $Y$.
+
+-   To test the null hypo, we compute a t-statistic.
+
+![](images/clipboard-1979367006.png)
+
+> MSE = $\hat{\sigma^2}$ !!
+
+### Confidence Intervals
+
+-   이거 모르면 자퇴해야겠지?
+
+![](images/clipboard-3006532652.png)
+
+### Sum of Squares
+
+-   Sum of squares total (SST) : $y_i$가 평균을 중심으로 얼마나 펴져 있는가? (**Total variation**)
+
+$$
+\text{SST} = \sum_{i=1}^n (y_i - \bar{y_i})^2
+$$
+
+> 이 Total variation 즉, 전체적인 변동을 두 가지 regression과 error로 설명이 가능하다.
+
+-   Sum of squares regression (SSR) : fitted된 model이 평균을 중심으로 얼마나 펴져 있는가? (Regression)
+
+$$
+\text{RSS} = \sum_{i = 1}^{n}(\hat{y_i}-\bar{y_i})^2
+$$
+
+-   SST = SSR + SSE 가 된다.
+
+> 간단하게 생각해보면 SSE가 크면 SSR이 작겠지? -\> fitted model이 별로다..!
+
+### ANOVA Table
+
+-   $F$ test for $H_0 : \beta_1 \quad\text{VS}\quad H_1:\beta_1 \neq  0$
+
+> t test와 다르게 f test 즉 아노바는 모든 애들이 동시에 0으로 가는지 체크
+>
+> 즉, F-test는 Regression Model이 의미가 있는 지 없는 지 testing!!
+
+$$
+F = {\text{MSR}\over \text{MSE}}
+$$
+
+> 식을 보면 일단 기각 시킬려면 MSR이 MSE보다 커야함!
+>
+> MSR이 크다!?! -\> Regression Model is gooood\~ -\> Reject H_0
+
+![](images/clipboard-2449914760.png)
+
+### Least Square Estimation
+
+```{r}
+data(golub, package="multtest") 
+zyxin <- grep("Zyxin", golub.gnames[,2], ignore.case=TRUE) 
+cmyb <- grep("c-myb", golub.gnames[,2], ignore.case=TRUE) 
+x <- golub[zyxin, ] 
+y <- golub[cmyb, ] 
+```
+
+```{r}
+g <- lm(y ~ x) 
+g$coef
+coef(g)
+summary(g)
+```
+
+```{r}
+plot(x, y, pch=19, xlab="Relative Zyxin gene expression",
+ylab="Relative c-MYB gene expression", cex.lab=1.5, col="blue")
+abline(g$coef, lwd=3, lty=2, col="red")
+```
+
+```{r}
+sum(g$res^2) # SSE (RSS)
+sum(residuals(g)^2)
+deviance(g)
+```
+
+```{r}
+plot(fitted(g), residuals(g), pch=19, xlab="Fitted values",
+ylab="Residuals")
+abline(h=0, lty=2, col="grey")
+```
+
+```{r}
+summary(g)$coef
+print("====================================================")
+g$coef
+print("====================================================")
+g$coef - qt(0.975, g$df)* summary(g)$coef[,2]
+g$coef + qt(0.975, g$df)* summary(g)$coef[,2]
+print("====================================================")
+confint(g)
+print("====================================================")
+confint(g, level=0.90) # confidence intervals
+```
+
+```{r}
+n <- length(x)
+p <- 1
+df1 <- n - p - 1
+df2 <- g$df
+df3 <- df.residual(g)
+c(df1, df2, df3)
+print("====================================================")
+summary(g)$sigma^2 # MSE
+print("====================================================")
+sum(g$res^2)/g$df
+print("====================================================")
+deviance(g)/df.residual(g) # deviance -> SSE
+print("====================================================")
+anova(g)
+print("====================================================")
+anova(g)$Sum # SSR, SSE 각각 
+print("====================================================")
+sum(anova(g)$Sum) # SST
+print("====================================================")
+summary(g)
+print("====================================================")
+names(summary(g))
+```

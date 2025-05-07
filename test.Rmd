@@ -1,0 +1,8 @@
+\documentclass{article}
+\title{Hello Latex}
+\author{kim na young}
+\data{May 2020}
+
+\section{Introduction}
+hello world!
+
