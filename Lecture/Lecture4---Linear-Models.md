@@ -1552,10 +1552,965 @@ plot(TukeyHSD(aov(g)))
 
 ### Example of One-way ANOVA
 
+``` r
+library(ALL)
+data(ALL)
+dim(ALL)
+```
+
+    ## Features  Samples 
+    ##    12625      128
+
+``` r
+ALL[1:10, 1:5]
+```
+
+    ## ExpressionSet (storageMode: lockedEnvironment)
+    ## assayData: 10 features, 5 samples 
+    ##   element names: exprs 
+    ## protocolData: none
+    ## phenoData
+    ##   sampleNames: 01005 01010 ... 04007 (5 total)
+    ##   varLabels: cod diagnosis ... date last seen (21 total)
+    ##   varMetadata: labelDescription
+    ## featureData: none
+    ## experimentData: use 'experimentData(object)'
+    ##   pubMedIds: 14684422 16243790 
+    ## Annotation: hgu95av2
+
+``` r
+str(ALL)
+```
+
+    ## Formal class 'ExpressionSet' [package "Biobase"] with 7 slots
+    ##   ..@ experimentData   :Formal class 'MIAME' [package "Biobase"] with 13 slots
+    ##   .. .. ..@ name             : chr "Chiaretti et al."
+    ##   .. .. ..@ lab              : chr "Department of Medical Oncology, Dana-Farber Cancer Institute, Department of Medicine, Brigham and Women's Hospi"| __truncated__
+    ##   .. .. ..@ contact          : chr ""
+    ##   .. .. ..@ title            : chr "Gene expression profile of adult T-cell acute lymphocytic leukemia identifies distinct subsets of patients with"| __truncated__
+    ##   .. .. ..@ abstract         : chr "Gene expression profiles were examined in 33 adult patients with T-cell acute lymphocytic leukemia (T-ALL). Non"| __truncated__
+    ##   .. .. ..@ url              : chr ""
+    ##   .. .. ..@ pubMedIds        : chr [1:2] "14684422" "16243790"
+    ##   .. .. ..@ samples          : list()
+    ##   .. .. ..@ hybridizations   : list()
+    ##   .. .. ..@ normControls     : list()
+    ##   .. .. ..@ preprocessing    : list()
+    ##   .. .. ..@ other            : list()
+    ##   .. .. ..@ .__classVersion__:Formal class 'Versions' [package "Biobase"] with 1 slot
+    ##   .. .. .. .. ..@ .Data:List of 1
+    ##   .. .. .. .. .. ..$ : int [1:3] 1 0 0
+    ##   .. .. .. .. ..$ names: chr "MIAME"
+    ##   ..@ assayData        :<environment: 0x112cffc88> 
+    ##   ..@ phenoData        :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
+    ##   .. .. ..@ varMetadata      :'data.frame':  21 obs. of  1 variable:
+    ##   .. .. .. ..$ labelDescription: chr [1:21] " Patient ID" " Date of diagnosis" " Gender of the patient" " Age of the patient at entry" ...
+    ##   .. .. ..@ data             :'data.frame':  128 obs. of  21 variables:
+    ##   .. .. .. ..$ cod           : chr [1:128] "1005" "1010" "3002" "4006" ...
+    ##   .. .. .. ..$ diagnosis     : chr [1:128] "5/21/1997" "3/29/2000" "6/24/1998" "7/17/1997" ...
+    ##   .. .. .. ..$ sex           : Factor w/ 2 levels "F","M": 2 2 1 2 2 2 1 2 2 2 ...
+    ##   .. .. .. ..$ age           : int [1:128] 53 19 52 38 57 17 18 16 15 40 ...
+    ##   .. .. .. ..$ BT            : Factor w/ 10 levels "B","B1","B2",..: 3 3 5 2 3 2 2 2 3 3 ...
+    ##   .. .. .. ..$ remission     : Factor w/ 2 levels "CR","REF": 1 1 1 1 1 1 1 1 1 1 ...
+    ##   .. .. .. ..$ CR            : chr [1:128] "CR" "CR" "CR" "CR" ...
+    ##   .. .. .. ..$ date.cr       : chr [1:128] "8/6/1997" "6/27/2000" "8/17/1998" "9/8/1997" ...
+    ##   .. .. .. ..$ t(4;11)       : logi [1:128] FALSE FALSE NA TRUE FALSE FALSE ...
+    ##   .. .. .. ..$ t(9;22)       : logi [1:128] TRUE FALSE NA FALSE FALSE FALSE ...
+    ##   .. .. .. ..$ cyto.normal   : logi [1:128] FALSE FALSE NA FALSE FALSE FALSE ...
+    ##   .. .. .. ..$ citog         : chr [1:128] "t(9;22)" "simple alt." NA "t(4;11)" ...
+    ##   .. .. .. ..$ mol.biol      : Factor w/ 6 levels "ALL1/AF4","BCR/ABL",..: 2 4 2 1 4 4 4 4 4 2 ...
+    ##   .. .. .. ..$ fusion protein: Factor w/ 3 levels "p190","p190/p210",..: 3 NA 1 NA NA NA NA NA NA 1 ...
+    ##   .. .. .. ..$ mdr           : Factor w/ 2 levels "NEG","POS": 1 2 1 1 1 1 2 1 1 1 ...
+    ##   .. .. .. ..$ kinet         : Factor w/ 2 levels "dyploid","hyperd.": 1 1 1 1 1 2 2 1 1 NA ...
+    ##   .. .. .. ..$ ccr           : logi [1:128] FALSE FALSE FALSE FALSE FALSE FALSE ...
+    ##   .. .. .. ..$ relapse       : logi [1:128] FALSE TRUE TRUE TRUE TRUE TRUE ...
+    ##   .. .. .. ..$ transplant    : logi [1:128] TRUE FALSE FALSE FALSE FALSE FALSE ...
+    ##   .. .. .. ..$ f.u           : chr [1:128] "BMT / DEATH IN CR" "REL" "REL" "REL" ...
+    ##   .. .. .. ..$ date last seen: chr [1:128] NA "8/28/2000" "10/15/1999" "1/23/1998" ...
+    ##   .. .. ..@ dimLabels        : chr [1:2] "sampleNames" "sampleColumns"
+    ##   .. .. ..@ .__classVersion__:Formal class 'Versions' [package "Biobase"] with 1 slot
+    ##   .. .. .. .. ..@ .Data:List of 1
+    ##   .. .. .. .. .. ..$ : int [1:3] 1 1 0
+    ##   .. .. .. .. ..$ names: chr "AnnotatedDataFrame"
+    ##   ..@ featureData      :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
+    ##   .. .. ..@ varMetadata      :'data.frame':  0 obs. of  1 variable:
+    ##   .. .. .. ..$ labelDescription: logi(0) 
+    ##   .. .. ..@ data             :'data.frame':  12625 obs. of  0 variables
+    ##   .. .. ..@ dimLabels        : chr [1:2] "featureNames" "featureColumns"
+    ##   .. .. ..@ .__classVersion__:Formal class 'Versions' [package "Biobase"] with 1 slot
+    ##   .. .. .. .. ..@ .Data:List of 1
+    ##   .. .. .. .. .. ..$ : int [1:3] 1 1 0
+    ##   .. .. .. .. ..$ names: chr "AnnotatedDataFrame"
+    ##   ..@ annotation       : chr "hgu95av2"
+    ##   ..@ protocolData     :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
+    ##   .. .. ..@ varMetadata      :'data.frame':  0 obs. of  1 variable:
+    ##   .. .. .. ..$ labelDescription: chr(0) 
+    ##   .. .. ..@ data             :'data.frame':  128 obs. of  0 variables
+    ##   .. .. ..@ dimLabels        : chr [1:2] "sampleNames" "sampleColumns"
+    ##   .. .. ..@ .__classVersion__:Formal class 'Versions' [package "Biobase"] with 1 slot
+    ##   .. .. .. .. ..@ .Data:List of 1
+    ##   .. .. .. .. .. ..$ : int [1:3] 1 1 0
+    ##   .. .. .. .. ..$ names: chr "AnnotatedDataFrame"
+    ##   ..@ .__classVersion__:Formal class 'Versions' [package "Biobase"] with 1 slot
+    ##   .. .. ..@ .Data:List of 4
+    ##   .. .. .. ..$ : int [1:3] 2 10 0
+    ##   .. .. .. ..$ : int [1:3] 2 5 5
+    ##   .. .. .. ..$ : int [1:3] 1 3 0
+    ##   .. .. .. ..$ : int [1:3] 1 0 0
+    ##   .. .. ..$ names: chr [1:4] "R" "Biobase" "eSet" "ExpressionSet"
+
+``` r
+exprs(ALL)[1:10, 1:5]
+```
+
+    ##              01005     01010    03002    04006    04007
+    ## 1000_at   7.597323  7.479445 7.567593 7.384684 7.905312
+    ## 1001_at   5.046194  4.932537 4.799294 4.922627 4.844565
+    ## 1002_f_at 3.900466  4.208155 3.886169 4.206798 3.416923
+    ## 1003_s_at 5.903856  6.169024 5.860459 6.116890 5.687997
+    ## 1004_at   5.925260  5.912780 5.893209 6.170245 5.615210
+    ## 1005_at   8.570990 10.428299 9.616713 9.937155 9.983809
+    ## 1006_at   3.656143  3.853979 3.646808 3.874289 3.547361
+    ## 1007_s_at 7.623562  7.543604 7.916954 6.816397 7.516981
+    ## 1008_f_at 8.903547  9.903953 8.494499 9.533983 8.871669
+    ## 1009_at   9.371888  9.322177 9.304982 9.135370 9.627175
+
+``` r
+dim(exprs(ALL))
+```
+
+    ## [1] 12625   128
+
+``` r
+table(ALL$BT)
+```
+
+    ## 
+    ##  B B1 B2 B3 B4  T T1 T2 T3 T4 
+    ##  5 19 36 23 12  5  1 15 10  2
+
+``` r
+B1B2B3 <- ALL$BT %in% c("B1","B2","B3")
+ex <- exprs(ALL)
+y <- as.numeric(ex[row.names(ex)=="1866_g_at", B1B2B3])
+factor <- factor(ALL$BT[B1B2B3], labels=c("B1","B2","B3"))
+```
+
+``` r
+col <- c("orange","darkgreen","blue")
+xlab <- "B-cell ALL stage"
+ylab <- "SKI-like oncogene expression"
+par(mfrow=c(1, 2))
+stripchart(y ~ factor, method="jitter", cex.lab=1.5, xlab=xlab,
+pch=19, col=col, vertical=TRUE, ylab=ylab)
+boxplot(y ~ factor, cex.lab=1.5, main=NULL, boxwex=0.3, col=col,
+xlab=xlab, ylab=ylab)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+``` r
+g <- lm(y ~ factor)
+summary(g)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = y ~ factor)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.59070 -0.25251 -0.07008  0.16395  1.29635 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  4.58222    0.08506  53.873  < 2e-16 ***
+    ## factorB2    -0.43689    0.10513  -4.156 8.52e-05 ***
+    ## factorB3    -0.72193    0.11494  -6.281 2.00e-08 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.3707 on 75 degrees of freedom
+    ## Multiple R-squared:  0.3461, Adjusted R-squared:  0.3287 
+    ## F-statistic: 19.85 on 2 and 75 DF,  p-value: 1.207e-07
+
+``` r
+anova(g)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: y
+    ##           Df  Sum Sq Mean Sq F value    Pr(>F)    
+    ## factor     2  5.4563 2.72813  19.848 1.207e-07 ***
+    ## Residuals 75 10.3091 0.13745                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+summary(aov(g))
+```
+
+    ##             Df Sum Sq Mean Sq F value   Pr(>F)    
+    ## factor       2  5.456  2.7281   19.85 1.21e-07 ***
+    ## Residuals   75 10.309  0.1375                     
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+pairwise.t.test(y, factor, p.adjust.method="bonferroni")
+```
+
+    ## 
+    ##  Pairwise comparisons using t tests with pooled SD 
+    ## 
+    ## data:  y and factor 
+    ## 
+    ##    B1      B2     
+    ## B2 0.00026 -      
+    ## B3 6e-08   0.01553
+    ## 
+    ## P value adjustment method: bonferroni
+
+``` r
+TukeyHSD(aov(g))
+```
+
+    ##   Tukey multiple comparisons of means
+    ##     95% family-wise confidence level
+    ## 
+    ## Fit: aov(formula = g)
+    ## 
+    ## $factor
+    ##             diff        lwr         upr     p adj
+    ## B2-B1 -0.4368885 -0.6882697 -0.18550726 0.0002489
+    ## B3-B1 -0.7219306 -0.9967602 -0.44710107 0.0000001
+    ## B3-B2 -0.2850422 -0.5216834 -0.04840097 0.0141733
+
+``` r
+plot(TukeyHSD(aov(g)))
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
+
+``` r
+y2 <- as.numeric(ex[row.names(ex)=="1242_at", B1B2B3])
+ylab <- "Ets2 expression"
+
+par(mfrow=c(1, 2))
+stripchart(y2 ~ factor, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab, ylab=ylab, col=col)
+boxplot(y2 ~ factor, cex.lab=1.5, main=NULL, xlab=xlab,
+boxwex=0.3, ylab=ylab, col=col)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+``` r
+g <- lm(y2 ~ factor)
+summary(g)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = y2 ~ factor)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.48408 -0.13461 -0.01297  0.12232  0.67138 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  6.55083    0.05673 115.483   <2e-16 ***
+    ## factorB2     0.03331    0.07011   0.475    0.636    
+    ## factorB3    -0.04675    0.07665  -0.610    0.544    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.2473 on 75 degrees of freedom
+    ## Multiple R-squared:  0.01925,    Adjusted R-squared:  -0.006898 
+    ## F-statistic: 0.7362 on 2 and 75 DF,  p-value: 0.4823
+
+``` r
+anova(g)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: y2
+    ##           Df Sum Sq  Mean Sq F value Pr(>F)
+    ## factor     2 0.0900 0.045012  0.7362 0.4823
+    ## Residuals 75 4.5854 0.061138
+
+``` r
+pairwise.t.test(y2, factor, p.adjust.method="bonferroni")
+```
+
+    ## 
+    ##  Pairwise comparisons using t tests with pooled SD 
+    ## 
+    ## data:  y2 and factor 
+    ## 
+    ##    B1   B2  
+    ## B2 1.00 -   
+    ## B3 1.00 0.69
+    ## 
+    ## P value adjustment method: bonferroni
+
+``` r
+TukeyHSD(aov(g))
+```
+
+    ##   Tukey multiple comparisons of means
+    ##     95% family-wise confidence level
+    ## 
+    ## Fit: aov(formula = g)
+    ## 
+    ## $factor
+    ##              diff        lwr        upr     p adj
+    ## B2-B1  0.03330952 -0.1343427 0.20096171 0.8832341
+    ## B3-B1 -0.04675441 -0.2300449 0.13653604 0.8151498
+    ## B3-B2 -0.08006393 -0.2378856 0.07775778 0.4492574
+
+``` r
+plot(TukeyHSD(aov(g)))
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
+
+``` r
+y3 <- as.numeric(ex[row.names(ex)=="1242_at", ])
+g <- lm(y3 ~ ALL$BT)
+anova(g)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: y3
+    ##            Df Sum Sq  Mean Sq F value Pr(>F)
+    ## ALL$BT      9 0.2929 0.032543  0.5573 0.8294
+    ## Residuals 118 6.8904 0.058393
+
+``` r
+xlab <- "B-cell and T-cell stage"
+par(mfrow=c(2, 1))
+stripchart(y3 ~ ALL$BT, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab, ylab=ylab, col=1:10)
+boxplot(y3 ~ ALL$BT, cex.lab=1.5, main=NULL, xlab=xlab,
+boxwex=0.3, ylab=ylab, col=1:10)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-52-1.png)<!-- -->
+
 ## 4. Multiple testing for ANOVA
+
+``` r
+dim(ex[, B1B2B3])
+```
+
+    ## [1] 12625    78
+
+``` r
+fun <- function(t) anova(lm(t ~ factor))$Pr[1]
+anova.pValues <- apply(ex[, B1B2B3], 1, fun)
+```
+
+``` r
+pBF <- p.adjust(anova.pValues, method="bonferroni")
+pHO <- p.adjust(anova.pValues, method="holm")
+pBH <- p.adjust(anova.pValues, method="BH")
+```
+
+``` r
+alpha <- 0.05
+c(sum(pBF < alpha), sum(pHO < alpha), sum(pBH < alpha))
+```
+
+    ## [1]  53  54 815
 
 ## 5. Checking assumptions
 
+- 정규성 검정
+
+``` r
+library(ALL)
+data(ALL)
+```
+
+``` r
+B1B2B3 <- ALL$BT %in% c("B1","B2","B3")
+ex <- exprs(ALL)
+y <- as.numeric(ex[row.names(ex)=="1866_g_at", B1B2B3])
+factor <- factor(ALL$BT[B1B2B3], labels=c("B1","B2","B3"))
+```
+
+``` r
+# 정규성 검정
+# H_0 is normality okay
+res <- residuals(lm(y ~ factor))
+shapiro.test(res) # pv < 0.05 이므로 아노바 ㄴㄴ
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  res
+    ## W = 0.93462, p-value = 0.0005989
+
+``` r
+par(mfrow=c(1, 2))
+qqnorm(res, pch=19, cex.lab=1.5, col="red", main=NULL)
+qqline(res)
+hist(res, nclass=20, col="orange", xlab="residuals", main="")
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-59-1.png)<!-- -->
+
+- 등분산 검정
+
+- H_0 : 등분산이노
+
+``` r
+library(lmtest)
+bptest(lm(y ~ factor), studentize=FALSE)
+```
+
+    ## 
+    ##  Breusch-Pagan test
+    ## 
+    ## data:  lm(y ~ factor)
+    ## BP = 8.7311, df = 2, p-value = 0.01271
+
+``` r
+bartlett.test(y ~ factor)
+```
+
+    ## 
+    ##  Bartlett test of homogeneity of variances
+    ## 
+    ## data:  y by factor
+    ## Bartlett's K-squared = 7.3117, df = 2, p-value = 0.02584
+
+``` r
+fligner.test(y, factor)
+```
+
+    ## 
+    ##  Fligner-Killeen test of homogeneity of variances
+    ## 
+    ## data:  y and factor
+    ## Fligner-Killeen:med chi-squared = 5.7718, df = 2, p-value = 0.05581
+
+``` r
+library(car)
+```
+
+    ## Loading required package: carData
+
+``` r
+leveneTest(y, factor)
+```
+
+    ## Levene's Test for Homogeneity of Variance (center = median)
+    ##       Df F value  Pr(>F)  
+    ## group  2  3.0666 0.05246 .
+    ##       75                  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+g <- lm(y ~ factor)
+plot(fitted(g), res, pch=19, col="red",
+xlab="Fitted values", ylab = "Residuals")
+abline(h=c(max(res), 0, min(res)), lty=2, col="grey")
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-62-1.png)<!-- -->
+
 ## 6. Robust tests
 
+- 잔차가 가정을 따르지 않을 때…
+
+- When only homoscedasticity is violated, **Welch’s ANOVA** -\> 정규성은
+  만족해야함!!!
+
+- When normality is violated, the **Kruskal-Wallis rank sum test** -\>
+  정규성 x 일 때!!!
+
+#### Example : Unequal variances
+
+``` r
+# Welch's ANOVA -> Games Howell test
+oneway.test(y ~ factor, var.equal = FALSE)
+```
+
+    ## 
+    ##  One-way analysis of means (not assuming equal variances)
+    ## 
+    ## data:  y and factor
+    ## F = 14.157, num df = 2.000, denom df = 36.998, p-value = 2.717e-05
+
+#### Example : Non-normallay distributed residuals
+
+``` r
+kruskal.test(y~factor)
+```
+
+    ## 
+    ##  Kruskal-Wallis rank sum test
+    ## 
+    ## data:  y by factor
+    ## Kruskal-Wallis chi-squared = 30.667, df = 2, p-value = 2.192e-07
+
+``` r
+f2 <- function(t) kruskal.test(t ~ factor)$p.value
+kruskal.pValues <- apply(ex[, B1B2B3], 1, f2)
+```
+
+``` r
+pBF <- p.adjust(kruskal.pValues, method="bonferroni")
+pHO <- p.adjust(kruskal.pValues, method="holm")
+pBH <- p.adjust(kruskal.pValues, method="BH")
+alpha <- 0.05
+c(sum(pBF < alpha), sum(pHO < alpha), sum(pBH < alpha))
+```
+
+    ## [1]  15  15 696
+
 ## 7. Two-way ANOVA
+
+``` r
+library(ALL)
+data(ALL)
+```
+
+``` r
+ex <- exprs(ALL)
+dim(ex)
+```
+
+    ## [1] 12625   128
+
+``` r
+table(ALL$BT)
+```
+
+    ## 
+    ##  B B1 B2 B3 B4  T T1 T2 T3 T4 
+    ##  5 19 36 23 12  5  1 15 10  2
+
+``` r
+table(ALL$mol.biol)
+```
+
+    ## 
+    ## ALL1/AF4  BCR/ABL E2A/PBX1      NEG   NUP-98  p15/p16 
+    ##       10       37        5       74        1        1
+
+``` r
+w1 <- ALL$BT %in% c("B", "B1", "B2", "B3", "B4")
+w2 <- ALL$mol.biol %in% c("BCR/ABL", "NEG")
+ex12 <- ex["32069_at", w1 & w2]
+length(ex12)
+```
+
+    ## [1] 79
+
+``` r
+facB <- ceiling(as.integer(ALL$BT[w1 & w2])/3)
+facB
+```
+
+    ##  [1] 1 1 2 1 1 1 1 1 1 2 2 1 2 1 1 2 1 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 1 1
+    ## [39] 1 2 1 1 2 2 2 2 2 2 2 1 1 2 2 2 2 2 2 2 2 2 1 1 1 1 2 2 2 1 1 2 2 2 2 1 1 1
+    ## [77] 1 1 1
+
+``` r
+data.frame(B.type=ALL$BT[w1 & w2], facB=facB)
+```
+
+    ##    B.type facB
+    ## 1      B2    1
+    ## 2      B2    1
+    ## 3      B4    2
+    ## 4      B2    1
+    ## 5      B1    1
+    ## 6      B1    1
+    ## 7      B1    1
+    ## 8      B2    1
+    ## 9      B2    1
+    ## 10     B3    2
+    ## 11     B3    2
+    ## 12     B2    1
+    ## 13     B3    2
+    ## 14      B    1
+    ## 15     B2    1
+    ## 16     B3    2
+    ## 17     B2    1
+    ## 18     B3    2
+    ## 19     B2    1
+    ## 20     B2    1
+    ## 21     B2    1
+    ## 22     B1    1
+    ## 23     B2    1
+    ## 24     B2    1
+    ## 25     B2    1
+    ## 26      B    1
+    ## 27      B    1
+    ## 28     B2    1
+    ## 29     B2    1
+    ## 30     B2    1
+    ## 31     B2    1
+    ## 32     B2    1
+    ## 33     B2    1
+    ## 34     B2    1
+    ## 35     B2    1
+    ## 36     B4    2
+    ## 37     B2    1
+    ## 38     B2    1
+    ## 39     B2    1
+    ## 40     B4    2
+    ## 41     B2    1
+    ## 42     B2    1
+    ## 43     B3    2
+    ## 44     B3    2
+    ## 45     B3    2
+    ## 46     B3    2
+    ## 47     B4    2
+    ## 48     B3    2
+    ## 49     B3    2
+    ## 50     B1    1
+    ## 51     B1    1
+    ## 52     B3    2
+    ## 53     B3    2
+    ## 54     B3    2
+    ## 55     B3    2
+    ## 56     B3    2
+    ## 57     B3    2
+    ## 58     B3    2
+    ## 59     B3    2
+    ## 60     B3    2
+    ## 61     B1    1
+    ## 62     B2    1
+    ## 63     B2    1
+    ## 64     B1    1
+    ## 65     B3    2
+    ## 66     B4    2
+    ## 67     B4    2
+    ## 68     B2    1
+    ## 69     B2    1
+    ## 70     B3    2
+    ## 71     B4    2
+    ## 72     B4    2
+    ## 73     B4    2
+    ## 74     B2    1
+    ## 75     B2    1
+    ## 76     B2    1
+    ## 77     B1    1
+    ## 78     B2    1
+    ## 79      B    1
+
+``` r
+fac1 <- factor(facB, levels=1:2, labels=c("B012", "B34"))
+fac2 <- factor(ALL$mol.biol[w1 & w2])
+table(fac1)
+```
+
+    ## fac1
+    ## B012  B34 
+    ##   48   31
+
+``` r
+table(fac2)
+```
+
+    ## fac2
+    ## BCR/ABL     NEG 
+    ##      37      42
+
+``` r
+tapply(ex12, fac1, mean)
+```
+
+    ##     B012      B34 
+    ## 6.438820 6.190026
+
+``` r
+tapply(ex12, fac2, mean)
+```
+
+    ##  BCR/ABL      NEG 
+    ## 6.552861 6.154722
+
+``` r
+col <- c("orange","blue")
+xlab1 <- "B-cell ALL stage"
+xlab2 <- "Molecular biology"
+ylab <- "NEDD4 expression"
+par(mfrow=c(1,2))
+stripchart(ex12 ~ fac1, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab1, ylab=ylab, col=col)
+stripchart(ex12 ~ fac2, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab2, ylab=ylab, col=col)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+
+``` r
+boxplot(ex12 ~ fac1, cex.lab=1.5, main=NULL, boxwex=0.3,
+ylab=ylab, col=col, xlab=xlab1)
+boxplot(ex12 ~ fac2, cex.lab=1.5, main=NULL, xlab=xlab2, ylab=ylab, col=col,boxwex=0.3)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-71-2.png)<!-- -->
+
+``` r
+interaction.plot(fac1, fac2, ex12, type="b", col=col, xlab=xlab1,
+pch=c(16, 17), lty=1, lwd=2, legend=F, ylab=ylab)
+legend("topright", c("BCR/ABL","NEG"), bty="n", lty=1, lwd=2,
+pch=c(16,17), col=col, inset=0.02)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
+
+``` r
+interaction.plot(fac2, fac1, ex12, type="b", col=col, xlab=xlab2,
+pch=c(16, 17), lty=1, lwd=2, legend=F, ylab=ylab)
+legend("topright", c("B012","B34"), bty="n", lty=1, lwd=2,
+pch=c(16,17), col=col, inset=0.02)
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-72-2.png)<!-- -->
+
+``` r
+tapply(ex12[fac2=="BCR/ABL"], fac1[fac2=="BCR/ABL"], mean)
+```
+
+    ##     B012      B34 
+    ## 6.764918 6.241844
+
+``` r
+tapply(ex12[fac2=="NEG"], fac1[fac2=="NEG"], mean)
+```
+
+    ##     B012      B34 
+    ## 6.162891 6.141447
+
+``` r
+tapply(ex12[fac1=="B012"], fac2[fac1=="B012"], mean)
+```
+
+    ##  BCR/ABL      NEG 
+    ## 6.764918 6.162891
+
+``` r
+tapply(ex12[fac1=="B34"], fac2[fac1=="B34"], mean)
+```
+
+    ##  BCR/ABL      NEG 
+    ## 6.241844 6.141447
+
+``` r
+anova(lm(ex12 ~ fac1 * fac2))
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: ex12
+    ##           Df  Sum Sq Mean Sq F value    Pr(>F)    
+    ## fac1       1  1.1659  1.1659  4.5999 0.0352127 *  
+    ## fac2       1  3.2162  3.2162 12.6891 0.0006433 ***
+    ## fac1:fac2  1  1.1809  1.1809  4.6592 0.0340869 *  
+    ## Residuals 75 19.0094  0.2535                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+summary(lm(ex12 ~ fac1 * fac2))
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = ex12 ~ fac1 * fac2)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -1.21905 -0.31589 -0.05137  0.24404  1.52015 
+    ## 
+    ## Coefficients:
+    ##                 Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)       6.7649     0.1073  63.026  < 2e-16 ***
+    ## fac1B34          -0.5231     0.1686  -3.103   0.0027 ** 
+    ## fac2NEG          -0.6020     0.1458  -4.128 9.39e-05 ***
+    ## fac1B34:fac2NEG   0.5016     0.2324   2.159   0.0341 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.5034 on 75 degrees of freedom
+    ## Multiple R-squared:  0.2264, Adjusted R-squared:  0.1954 
+    ## F-statistic: 7.316 on 3 and 75 DF,  p-value: 0.0002285
+
+``` r
+data.frame(fac1, fac2)
+```
+
+    ##    fac1    fac2
+    ## 1  B012 BCR/ABL
+    ## 2  B012     NEG
+    ## 3   B34 BCR/ABL
+    ## 4  B012     NEG
+    ## 5  B012     NEG
+    ## 6  B012     NEG
+    ## 7  B012     NEG
+    ## 8  B012     NEG
+    ## 9  B012 BCR/ABL
+    ## 10  B34 BCR/ABL
+    ## 11  B34     NEG
+    ## 12 B012     NEG
+    ## 13  B34 BCR/ABL
+    ## 14 B012     NEG
+    ## 15 B012 BCR/ABL
+    ## 16  B34 BCR/ABL
+    ## 17 B012 BCR/ABL
+    ## 18  B34 BCR/ABL
+    ## 19 B012     NEG
+    ## 20 B012 BCR/ABL
+    ## 21 B012 BCR/ABL
+    ## 22 B012     NEG
+    ## 23 B012 BCR/ABL
+    ## 24 B012     NEG
+    ## 25 B012 BCR/ABL
+    ## 26 B012     NEG
+    ## 27 B012 BCR/ABL
+    ## 28 B012     NEG
+    ## 29 B012 BCR/ABL
+    ## 30 B012 BCR/ABL
+    ## 31 B012     NEG
+    ## 32 B012 BCR/ABL
+    ## 33 B012 BCR/ABL
+    ## 34 B012 BCR/ABL
+    ## 35 B012     NEG
+    ## 36  B34 BCR/ABL
+    ## 37 B012     NEG
+    ## 38 B012     NEG
+    ## 39 B012     NEG
+    ## 40  B34 BCR/ABL
+    ## 41 B012 BCR/ABL
+    ## 42 B012 BCR/ABL
+    ## 43  B34     NEG
+    ## 44  B34     NEG
+    ## 45  B34     NEG
+    ## 46  B34     NEG
+    ## 47  B34 BCR/ABL
+    ## 48  B34 BCR/ABL
+    ## 49  B34     NEG
+    ## 50 B012     NEG
+    ## 51 B012     NEG
+    ## 52  B34     NEG
+    ## 53  B34 BCR/ABL
+    ## 54  B34     NEG
+    ## 55  B34     NEG
+    ## 56  B34     NEG
+    ## 57  B34     NEG
+    ## 58  B34     NEG
+    ## 59  B34 BCR/ABL
+    ## 60  B34 BCR/ABL
+    ## 61 B012     NEG
+    ## 62 B012     NEG
+    ## 63 B012 BCR/ABL
+    ## 64 B012 BCR/ABL
+    ## 65  B34     NEG
+    ## 66  B34     NEG
+    ## 67  B34     NEG
+    ## 68 B012     NEG
+    ## 69 B012 BCR/ABL
+    ## 70  B34     NEG
+    ## 71  B34 BCR/ABL
+    ## 72  B34 BCR/ABL
+    ## 73  B34 BCR/ABL
+    ## 74 B012     NEG
+    ## 75 B012     NEG
+    ## 76 B012 BCR/ABL
+    ## 77 B012     NEG
+    ## 78 B012 BCR/ABL
+    ## 79 B012 BCR/ABL
+
+``` r
+nfac <- rep(1, length(fac1))
+nfac[fac1=="B012" & fac2=="NEG"] <- 2
+nfac[fac1=="B34" & fac2=="BCR/ABL"] <- 3
+nfac[fac1=="B34" & fac2=="NEG"] <- 4
+nfac <- factor(nfac, labels=c("f11", "f12", "f21", "f22"))
+table(nfac)
+```
+
+    ## nfac
+    ## f11 f12 f21 f22 
+    ##  22  26  15  16
+
+``` r
+table(fac1, fac2)
+```
+
+    ##       fac2
+    ## fac1   BCR/ABL NEG
+    ##   B012      22  26
+    ##   B34       15  16
+
+``` r
+res <- residuals(lm(ex12 ~ nfac))
+shapiro.test(res)
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  res
+    ## W = 0.98762, p-value = 0.648
+
+``` r
+library(lmtest)
+bptest(lm(ex12 ~ nfac), studentize=FALSE)
+```
+
+    ## 
+    ##  Breusch-Pagan test
+    ## 
+    ## data:  lm(ex12 ~ nfac)
+    ## BP = 5.9348, df = 3, p-value = 0.1148
+
+``` r
+anova(lm(ex12 ~ nfac))
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: ex12
+    ##           Df Sum Sq Mean Sq F value    Pr(>F)    
+    ## nfac       3  5.563 1.85432  7.3161 0.0002285 ***
+    ## Residuals 75 19.009 0.25346                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+TukeyHSD(aov(lm(ex12 ~ nfac)))
+```
+
+    ##   Tukey multiple comparisons of means
+    ##     95% family-wise confidence level
+    ## 
+    ## Fit: aov(formula = lm(ex12 ~ nfac))
+    ## 
+    ## $nfac
+    ##                diff        lwr         upr     p adj
+    ## f12-f11 -0.60202738 -0.9852329 -0.21882189 0.0005352
+    ## f21-f11 -0.52307392 -0.9660222 -0.08012565 0.0140737
+    ## f22-f11 -0.62347091 -1.0581108 -0.18883102 0.0018080
+    ## f21-f12  0.07895345 -0.3499591  0.50786599 0.9624938
+    ## f22-f12 -0.02144353 -0.4417703  0.39888328 0.9991323
+    ## f22-f21 -0.10039699 -0.5758245  0.37503056 0.9449440
+
+``` r
+plot(TukeyHSD(aov(lm(ex12 ~ nfac))))
+```
+
+![](Lecture4---Linear-Models_files/figure-gfm/unnamed-chunk-74-1.png)<!-- -->

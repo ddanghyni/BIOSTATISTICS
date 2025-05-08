@@ -608,10 +608,274 @@ plot(TukeyHSD(aov(g)))
 
 ### Example of One-way ANOVA
 
+```{r}
+library(ALL)
+data(ALL)
+dim(ALL)
+ALL[1:10, 1:5]
+str(ALL)
+exprs(ALL)[1:10, 1:5]
+dim(exprs(ALL))
+```
+
+```{r}
+table(ALL$BT)
+B1B2B3 <- ALL$BT %in% c("B1","B2","B3")
+ex <- exprs(ALL)
+y <- as.numeric(ex[row.names(ex)=="1866_g_at", B1B2B3])
+factor <- factor(ALL$BT[B1B2B3], labels=c("B1","B2","B3"))
+```
+
+```{r}
+col <- c("orange","darkgreen","blue")
+xlab <- "B-cell ALL stage"
+ylab <- "SKI-like oncogene expression"
+par(mfrow=c(1, 2))
+stripchart(y ~ factor, method="jitter", cex.lab=1.5, xlab=xlab,
+pch=19, col=col, vertical=TRUE, ylab=ylab)
+boxplot(y ~ factor, cex.lab=1.5, main=NULL, boxwex=0.3, col=col,
+xlab=xlab, ylab=ylab)
+```
+
+```{r}
+g <- lm(y ~ factor)
+summary(g)
+anova(g)
+summary(aov(g))
+```
+
+```{r}
+pairwise.t.test(y, factor, p.adjust.method="bonferroni")
+TukeyHSD(aov(g))
+plot(TukeyHSD(aov(g)))
+```
+
+```{r}
+y2 <- as.numeric(ex[row.names(ex)=="1242_at", B1B2B3])
+ylab <- "Ets2 expression"
+
+par(mfrow=c(1, 2))
+stripchart(y2 ~ factor, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab, ylab=ylab, col=col)
+boxplot(y2 ~ factor, cex.lab=1.5, main=NULL, xlab=xlab,
+boxwex=0.3, ylab=ylab, col=col)
+```
+
+```{r}
+g <- lm(y2 ~ factor)
+summary(g)
+anova(g)
+```
+
+```{r}
+pairwise.t.test(y2, factor, p.adjust.method="bonferroni")
+TukeyHSD(aov(g))
+plot(TukeyHSD(aov(g)))
+```
+
+```{r}
+y3 <- as.numeric(ex[row.names(ex)=="1242_at", ])
+g <- lm(y3 ~ ALL$BT)
+anova(g)
+```
+
+```{r}
+xlab <- "B-cell and T-cell stage"
+par(mfrow=c(2, 1))
+stripchart(y3 ~ ALL$BT, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab, ylab=ylab, col=1:10)
+boxplot(y3 ~ ALL$BT, cex.lab=1.5, main=NULL, xlab=xlab,
+boxwex=0.3, ylab=ylab, col=1:10)
+```
+
 ## 4. Multiple testing for ANOVA
+
+```{r}
+dim(ex[, B1B2B3])
+fun <- function(t) anova(lm(t ~ factor))$Pr[1]
+anova.pValues <- apply(ex[, B1B2B3], 1, fun)
+```
+
+```{r}
+pBF <- p.adjust(anova.pValues, method="bonferroni")
+pHO <- p.adjust(anova.pValues, method="holm")
+pBH <- p.adjust(anova.pValues, method="BH")
+```
+
+```{r}
+alpha <- 0.05
+c(sum(pBF < alpha), sum(pHO < alpha), sum(pBH < alpha))
+```
 
 ## 5. Checking assumptions
 
+-   정규성 검정
+
+```{r}
+library(ALL)
+data(ALL)
+```
+
+```{r}
+B1B2B3 <- ALL$BT %in% c("B1","B2","B3")
+ex <- exprs(ALL)
+y <- as.numeric(ex[row.names(ex)=="1866_g_at", B1B2B3])
+factor <- factor(ALL$BT[B1B2B3], labels=c("B1","B2","B3"))
+```
+
+```{r}
+# 정규성 검정
+# H_0 is normality okay
+res <- residuals(lm(y ~ factor))
+shapiro.test(res) # pv < 0.05 이므로 아노바 ㄴㄴ
+```
+
+```{r}
+par(mfrow=c(1, 2))
+qqnorm(res, pch=19, cex.lab=1.5, col="red", main=NULL)
+qqline(res)
+hist(res, nclass=20, col="orange", xlab="residuals", main="")
+```
+
+-   등분산 검정
+
+-   H_0 : 등분산이노
+
+```{r}
+library(lmtest)
+bptest(lm(y ~ factor), studentize=FALSE)
+```
+
+```{r}
+bartlett.test(y ~ factor)
+fligner.test(y, factor)
+library(car)
+leveneTest(y, factor)
+```
+
+```{r}
+g <- lm(y ~ factor)
+plot(fitted(g), res, pch=19, col="red",
+xlab="Fitted values", ylab = "Residuals")
+abline(h=c(max(res), 0, min(res)), lty=2, col="grey")
+```
+
 ## 6. Robust tests
 
+-   잔차가 가정을 따르지 않을 때...
+
+-   When only homoscedasticity is violated, **Welch's ANOVA** -\> 정규성은 만족해야함!!!
+
+-   When normality is violated, the **Kruskal-Wallis rank sum test** -\> 정규성 x 일 때!!!
+
+#### Example : Unequal variances 
+
+```{r}
+# Welch's ANOVA -> Games Howell test
+oneway.test(y ~ factor, var.equal = FALSE)
+```
+
+#### Example : Non-normallay distributed residuals
+
+```{r}
+kruskal.test(y~factor)
+```
+
+```{r}
+f2 <- function(t) kruskal.test(t ~ factor)$p.value
+kruskal.pValues <- apply(ex[, B1B2B3], 1, f2)
+```
+
+```{r}
+pBF <- p.adjust(kruskal.pValues, method="bonferroni")
+pHO <- p.adjust(kruskal.pValues, method="holm")
+pBH <- p.adjust(kruskal.pValues, method="BH")
+alpha <- 0.05
+c(sum(pBF < alpha), sum(pHO < alpha), sum(pBH < alpha))
+```
+
 ## 7. Two-way ANOVA
+
+```{r}
+library(ALL)
+data(ALL)
+```
+
+```{r}
+ex <- exprs(ALL)
+dim(ex)
+```
+
+```{r}
+table(ALL$BT)
+table(ALL$mol.biol)
+```
+
+```{r}
+w1 <- ALL$BT %in% c("B", "B1", "B2", "B3", "B4")
+w2 <- ALL$mol.biol %in% c("BCR/ABL", "NEG")
+ex12 <- ex["32069_at", w1 & w2]
+length(ex12)
+facB <- ceiling(as.integer(ALL$BT[w1 & w2])/3)
+facB
+data.frame(B.type=ALL$BT[w1 & w2], facB=facB)
+fac1 <- factor(facB, levels=1:2, labels=c("B012", "B34"))
+fac2 <- factor(ALL$mol.biol[w1 & w2])
+table(fac1)
+table(fac2)
+tapply(ex12, fac1, mean)
+tapply(ex12, fac2, mean)
+```
+
+```{r}
+col <- c("orange","blue")
+xlab1 <- "B-cell ALL stage"
+xlab2 <- "Molecular biology"
+ylab <- "NEDD4 expression"
+par(mfrow=c(1,2))
+stripchart(ex12 ~ fac1, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab1, ylab=ylab, col=col)
+stripchart(ex12 ~ fac2, method="jitter", cex.lab=1.5, pch=19,
+vertical=TRUE, xlab=xlab2, ylab=ylab, col=col)
+boxplot(ex12 ~ fac1, cex.lab=1.5, main=NULL, boxwex=0.3,
+ylab=ylab, col=col, xlab=xlab1)
+boxplot(ex12 ~ fac2, cex.lab=1.5, main=NULL, xlab=xlab2, ylab=ylab, col=col,boxwex=0.3)
+```
+
+```{r}
+interaction.plot(fac1, fac2, ex12, type="b", col=col, xlab=xlab1,
+pch=c(16, 17), lty=1, lwd=2, legend=F, ylab=ylab)
+legend("topright", c("BCR/ABL","NEG"), bty="n", lty=1, lwd=2,
+pch=c(16,17), col=col, inset=0.02)
+interaction.plot(fac2, fac1, ex12, type="b", col=col, xlab=xlab2,
+pch=c(16, 17), lty=1, lwd=2, legend=F, ylab=ylab)
+legend("topright", c("B012","B34"), bty="n", lty=1, lwd=2,
+pch=c(16,17), col=col, inset=0.02)
+tapply(ex12[fac2=="BCR/ABL"], fac1[fac2=="BCR/ABL"], mean)
+tapply(ex12[fac2=="NEG"], fac1[fac2=="NEG"], mean)
+tapply(ex12[fac1=="B012"], fac2[fac1=="B012"], mean)
+tapply(ex12[fac1=="B34"], fac2[fac1=="B34"], mean)
+```
+
+```{r}
+anova(lm(ex12 ~ fac1 * fac2))
+summary(lm(ex12 ~ fac1 * fac2))
+```
+
+```{r}
+data.frame(fac1, fac2)
+nfac <- rep(1, length(fac1))
+nfac[fac1=="B012" & fac2=="NEG"] <- 2
+nfac[fac1=="B34" & fac2=="BCR/ABL"] <- 3
+nfac[fac1=="B34" & fac2=="NEG"] <- 4
+nfac <- factor(nfac, labels=c("f11", "f12", "f21", "f22"))
+table(nfac)
+table(fac1, fac2)
+res <- residuals(lm(ex12 ~ nfac))
+shapiro.test(res)
+library(lmtest)
+bptest(lm(ex12 ~ nfac), studentize=FALSE)
+anova(lm(ex12 ~ nfac))
+TukeyHSD(aov(lm(ex12 ~ nfac)))
+plot(TukeyHSD(aov(lm(ex12 ~ nfac))))
+```
