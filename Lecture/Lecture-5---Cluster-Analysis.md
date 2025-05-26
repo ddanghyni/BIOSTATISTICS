@@ -4,7 +4,14 @@ KIM SANG HYUN(202211545)
 2025-05-08
 
 - [05. Cluster Analysis](#05-cluster-analysis)
-  - [K means](#k-means)
+  - [Introduction](#introduction)
+  - [Example of Euclidean Distance](#example-of-euclidean-distance)
+  - [Example of Euclidean Distance](#example-of-euclidean-distance-1)
+  - [Clustering](#clustering)
+  - [K - means Clustering](#k---means-clustering)
+  - [K - Means Cluster Algorithm](#k---means-cluster-algorithm)
+  - [Example of the K-means
+    Clustering](#example-of-the-k-means-clustering)
 
 ## 05. Cluster Analysis
 
@@ -59,10 +66,47 @@ library(gplots)
 library(ISLR2)
 ```
 
+### Introduction
+
+- Cluster analysis consists of several methods for discovering a subset
+  of genes which form a group under some obervable **similarity
+  criteria.**
+
+- These methods are based on **distiance function** and an algorithm to
+  join data points into clusters based on their relative distances to
+  each other.
+
+#### Distance
+
+- The concept of distance plays a crucial role in cluster analysis.
+
+- The following **properties are satisfied.**
+
+![](images/clipboard-1105142367.png)
+
+- When analyzing gene expression values for several patients, it’ s
+  important to define a **distance between vectors of gene
+  expressions**, such as the distance between $a = (a_1,...,a_n)^T$ and
+  $b = (b_1,...,b_n)^T$ .
+
+- We wii focus mainly on the **Euclidean distance**.
+
+$$
+d(a, b ) = \sqrt{\sum^n_{i=1}(a_i-b_i)^2}
+$$
+
+### Example of Euclidean Distance
+
+- Example : Distances betwwen Cyclin gene expressions.
+
+  - We select the genes related to the biological term “Cyclin” and then
+    compute the Euclidean distance between their expresssion values in
+    the **Golub** data.
+
 ``` r
-data(golub, package = "multtest")
-cyclins <- grep("Cyclin", golub.gnames[,2])
-golub.gnames[cyclins, 2]
+data(golub, package= "multtest")
+cyclins = grep("Cyclin", golub.gnames[,2]) # cyclins과 관련된 이름 뽑!
+golub.gnames[cyclins,2]
 ```
 
     ##  [1] "CCND2 Cyclin D2"                                        
@@ -79,7 +123,7 @@ golub.gnames[cyclins, 2]
     ## [12] "CCNF Cyclin F"
 
 ``` r
-golub[cyclins, ]
+golub[cyclins,]
 ```
 
     ##           [,1]     [,2]     [,3]     [,4]     [,5]     [,6]     [,7]     [,8]
@@ -149,7 +193,13 @@ golub[cyclins, ]
     ## [12,] -1.47218 -1.34158 -1.22961 -1.39906 -1.34579 -1.32403
 
 ``` r
-dist.cyclin <- dist(golub[cyclins, ], method="euclidean")
+dim(golub[cyclins,])
+```
+
+    ## [1] 12 38
+
+``` r
+dist.cyclin = dist(golub[cyclins, ], method = "euclidean")
 dist.cyclin
 ```
 
@@ -179,9 +229,9 @@ dist.cyclin
     ## 12 10.253758 14.684560  8.526896 10.328346
 
 ``` r
-distanceMatrix <- as.matrix(dist.cyclin)
-rownames(distanceMatrix) <- golub.gnames[cyclins, 3]
-colnames(distanceMatrix) <- golub.gnames[cyclins, 3]
+distanceMatrix = as.matrix(dist.cyclin)
+rownames(distanceMatrix) = golub.gnames[cyclins, 3]
+colnames(distanceMatrix) = golub.gnames[cyclins, 3]
 distanceMatrix[1:5, 1:5]
 ```
 
@@ -192,11 +242,20 @@ distanceMatrix[1:5, 1:5]
     ## U09579_at 10.056814  5.931260  11.99133  0.000000  5.698232
     ## U11791_at  8.669112  2.934802  11.90056  5.698232  0.000000
 
+### Example of Euclidean Distance
+
+- Example: Finding the ten genes with expression patterns most similar
+  to the MME gene.
+
+  - `genefinder()` : 지정한 유전자의 발현 패턴과 가장 유사한 유전자들을
+    거리 기준으로 찾아줌.
+
 ``` r
 library(genefilter)
 library(ALL)
 data(ALL)
 closeto1389_at <- genefinder(ALL, "1389_at", 10, method="euc")
+#  "1389_at" 유전자와 유클리드 거리 기준으로 가장 가까운 10개의 유전자를 찾아줘.
 closeto1389_at
 ```
 
@@ -211,7 +270,7 @@ closeto1389_at
 - index 번호하고 거리하고 넘겨줌
 
 ``` r
-w <- featureNames(ALL)[closeto1389_at[[1]]$indices]
+w <- featureNames(ALL)[closeto1389_at[[1]]$indices] 
 data.frame(genes=w, distance=closeto1389_at[[1]]$dists)
 ```
 
@@ -227,7 +286,59 @@ data.frame(genes=w, distance=closeto1389_at[[1]]$dists)
     ## 9    38438_at 13.32321
     ## 10   40635_at 13.38972
 
-### K means
+### Clustering
+
+- We seek a partition of the data into distinct groups so that the
+  observations within each group are quite similar to each other.
+
+- There is two differnet clustering methods.
+
+  - K-means clustering
+
+  - Hierarchical clustering
+
+### K - means Clustering
+
+- Let $C_1, C_2, ..., C_k$ (\$k\$ is hyperparameter) denote sets
+  containing the indices of the observations in each cluster.
+
+- If the $i$th observation is in the $k$th cluster, then $i \in C_K$.
+
+- Property 1 : 각 관측치는 무조건 K개 group 중 하나에는 들어가야한다.
+
+- Property 2 : 각 그룹의 교집한은 존재 하지 않는다. (관측치가 동시에
+  다른 그룹에 속하지 x)
+
+- The idea behinde K-means clustering is that a good clustering is one
+  for which the WCV is as small as possible.
+
+> WCV (Within - Cluster Variation)이란?
+>
+> WCV는 하나의 군집 안에 있는 데이터들이 서로 얼마나 흩어져 있는지를
+> 측정하는 값.
+>
+> 즉, 같은 군집 안에 있는 데이터들이 서로 얼마나 비슷한가 를 수치로
+> 나타냄.
+
+- Typically, we us **Euclidean distance**
+
+<img src="images/clipboard-319310185.png" width="500" />
+
+### K - Means Cluster Algorithm
+
+![](images/clipboard-2409247611.png)
+
+![](images/clipboard-1241182439.png)
+
+- This algorithm is guaranteed to decrease the value of Total
+  within-cluster variation, however it is not guaranteed to give
+  **global minimun**.
+
+### Example of the K-means Clustering
+
+- Example : K - means cluster analysis for 2 patients and 50 genes.
+
+- 
 
 ``` r
 set.seed(111)
@@ -272,7 +383,7 @@ main="K-Means Clustering Results with K=2")
 points(cl$centers, col=1:2, pch=8, cex=4)
 ```
 
-![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 cl <- kmeans(data, 3, nstart=20)
@@ -281,7 +392,7 @@ main="K-Means Clustering Results with K=3")
 points(cl$centers, col=1:2, pch=8, cex=4)
 ```
 
-![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 set.seed(111)
@@ -299,7 +410,7 @@ main=paste("(", tv, ")"))
 points(cl$centers, col=1:2, pch=8, cex=4)
 ```
 
-![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 data(golub, package="multtest")
@@ -382,7 +493,7 @@ plot(data, col=cl$cluster, pch=19, xlab="CCND3", ylab="Zyxin")
 points(cl$centers, col=1:2, pch=8, cex=4)
 ```
 
-![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 par(mfrow=c(1, 3))
@@ -400,4 +511,4 @@ main="K = 4")
 points(cl$centers, col=1:4, pch=8, cex=4)
 ```
 
-![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->

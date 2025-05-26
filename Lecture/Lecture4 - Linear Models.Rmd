@@ -768,7 +768,7 @@ abline(h=c(max(res), 0, min(res)), lty=2, col="grey")
 
 -   When normality is violated, the **Kruskal-Wallis rank sum test** -\> 정규성 x 일 때!!!
 
-#### Example : Unequal variances 
+#### Example : Unequal variances
 
 ```{r}
 # Welch's ANOVA -> Games Howell test
