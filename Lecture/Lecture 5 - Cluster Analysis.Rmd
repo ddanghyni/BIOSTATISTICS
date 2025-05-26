@@ -84,7 +84,7 @@ w <- featureNames(ALL)[closeto1389_at[[1]]$indices]
 data.frame(genes=w, distance=closeto1389_at[[1]]$dists)
 ```
 
-### Clustering 
+### Clustering
 
 -   We seek a partition of the data into distinct groups so that the observations within each group are quite similar to each other.
 
@@ -128,13 +128,12 @@ data.frame(genes=w, distance=closeto1389_at[[1]]$dists)
 
 -   Example : K - means cluster analysis for 2 patients and 50 genes.
 
--   
-
 ```{r}
 set.seed(111)
 x1 <- matrix(rnorm(100, 0, 0.5), ncol=2)
 x2 <- matrix(rnorm(100, 2, 0.5), ncol=2)
 data <- rbind(x1, x2)
+data
 ```
 
 -   데이터 구조 확인하기
@@ -142,9 +141,14 @@ data <- rbind(x1, x2)
 -   `nstart` : 몇 번 반복할 것인가..?
 
 ```{r}
-cl <- kmeans(data, 2, nstart=20)
+cl <- kmeans(data, centers = 2, nstart=20)
+
 cl
 ```
+
+-   분산 설명 비율 -\> 79.2%
+
+-   전체 데이터의 분산 중에서 , **군집 간의 차이**로 설명 가능한 비율!! -\> 높을수록 굿!
 
 ```{r}
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
@@ -168,12 +172,17 @@ tv <- round(cl$tot.withinss, 3)
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
 main=paste("(", tv, ")"))
 points(cl$centers, col=1:2, pch=8, cex=4)
-cl <- kmeans(data, 3, nstart=20)
+
+cl <- kmeans(data, 3, nstart=20) # 여러번 반복하니깐 TWV가 역시 줄어든다!
 tv <- round(cl$tot.withinss, 3)
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
 main=paste("(", tv, ")"))
 points(cl$centers, col=1:2, pch=8, cex=4)
 ```
+
+-   Example of Application to the Golub data.
+
+    -   We found that the expression values of the genes CCND3 and Zyxin are closely related to the distinction between ALL and AML.
 
 ```{r}
 data(golub, package="multtest")
@@ -185,7 +194,7 @@ colnames(data) <- c("CCND3 (Cyclin D3)", "Zyxin")
 
 ```{r}
 cl <- kmeans(data, 2, nstart=20)
-cbind(cl$cluster, golub.cl)
+cbind(cl$cluster, golub.cl) # -> clustering 잘되었노!
 ```
 
 ```{r}
@@ -212,3 +221,165 @@ plot(data, col=cl$cluster, pch=19, xlab="CCND3", ylab="Zyxin",
 main="K = 4")
 points(cl$centers, col=1:4, pch=8, cex=4)
 ```
+
+### Hierarchical Clustering
+
+-   K-means clustering requires us to pre-specify the number of clusters $K$. This can be a disadvantage.
+
+-   Hierarchical Clustering is an alternative approach which does not require that \*\*we commit to a particular choice of $K$.\*\*
+
+-   HC results in an attractive tree-based representation of the observations, called a dendrogram.
+
+-   We describe bottom-up or agglomerative clustering. This is the most common type of hierarchical clustering, and refers to the fact that a dendrogram is built starting from the leaves and combining clusters up to the trunk.
+
+-   Hierarchical clustering starts with each point in its own cluster, and identify the closest two clusters and merge them, until all points are in a single cluster.
+
+![](images/clipboard-454167237.png)
+
+![](images/clipboard-4104911788.png)
+
+-   덴드로그랩에서 가로축 상의 가까운 위치만 보고 두 개체가 유사하다고 판단하면 안된다.
+
+-   두 관측치가 유사한지는, 각각이 속한 가지가 수직축의 어느 높이에서 처음으로 합쳐지는지를 보고 판단해야 한다.
+
+### Dissimilarity of Clusters
+
+-   계층적 군집 알고리즘은 덴드로그램의 맨 아래에서 시작하며, 각 관측치를 독립적인 군집으로 취급한다.
+
+-   그 후 가장 유사한 두 군집을 계속 합쳐가며, 결국 하나의 큰 군집이 될 때까지 반복한다.
+
+-   관측치 간의 dissimilarity는 유클리드 거리로 측정할 수 있다.
+
+-   그럼 군집은??? -\> by Linkage!
+
+### Type of Linkage
+
+![](images/clipboard-2386013967.png)
+
+### Example of Single Linkage
+
+-   Example : Single linkage with 5 genes.
+
+```{r}
+names <- list(c("g1", "g2", "g3", "g4", "g5"),
+c("patient 1", "patient 2"))
+sl <- matrix(c(1, 1, 1, 1.3, 3, 2, 3, 2.4, 5, 5), ncol=2, 
+             byrow=TRUE, dimnames=names)
+```
+
+```{r}
+rr <- c(0, 6)
+plot(sl, pch=19, col="blue", cex=1.4, xlim=rr, ylim=rr)
+text(sl, labels=row.names(sl), pos=4, col="red", cex=1.2)
+print(dist(sl, method="euclidean"), digits=3)
+```
+
+```{r}
+ds <- dist(sl, method="euclidean")
+sl.out <- hclust(ds, method="single")
+sl.out
+```
+
+```{r}
+plot(sl.out, lwd=3, col="blue", col.axis = "brown",
+hang=-1, main=NA, sub=NA, axes=FALSE, ylab="Distance",
+xlab="Clustering of the expression of 5 genes")
+axis(side=2, at=seq(0,3.5,.5), col="brown", labels=TRUE, lwd=4)
+```
+
+-   Example of Random Data
+
+```{r}
+set.seed(12345)
+x <- rnorm(20)
+out <- hclust(dist(x, method="euclidean"), method="single")
+plot(out, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="20 genes with normal random distances")
+axis(side=2, at=seq(0,1.4,.2), col="brown", labels=TRUE, lwd=4)
+```
+
+> This example highlights an important caveat about clustering
+>
+> -   clustering will always produce clusters in your data even if all the data is sampled from identical distributions.
+
+```{r}
+set.seed(4321)
+x <- c(rnorm(10, 0, 0.1), rnorm(10, 3, 0.5),
+rnorm(10, 10, 1.0))
+out <- hclust(dist(x, method="euclidean"), method="single")
+out
+```
+
+-   분산이 작다 -\> 옹기종기 모여있다 -\> 그럼 빨리 군집화된다-\> 군집화되는 height가 작다!
+
+```{r}
+plot(out, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="3 clusters of 10 genes each")
+axis(side=2, at=seq(0, 5, 1), col="brown", labels=TRUE, lwd=4)
+abline(h=1, lty=2, lwd=2, col="gray")
+```
+
+### Example of Hierarchical Clustering
+
+-   Example : Application to the Golub data.
+
+```{r}
+data(golub, package="multtest")
+zyxin <- grep("Zyxin", golub.gnames[ ,2])
+ccnd3 <- grep("CCND3", golub.gnames[ ,2])
+```
+
+```{r}
+clusdata <- data.frame(golub[ccnd3, ], golub[zyxin, ])
+colnames(clusdata) <- c("CCND3 Cyclin D3", "Zyxin")
+gfactor <- factor(golub.cl, levels=0:1, labels=c("ALL", "AML"))
+```
+
+```{r}
+gf <- as.numeric(gfactor)
+plot(clusdata, pch=gf+15, col=gf+1)
+legend("topright", legend=c("ALL", "AML"), pch=16:17, col=c(2,3))
+```
+
+```{r}
+dist.cl <- dist(clusdata, method="euclidean")
+gcl <- hclust(dist.cl, method="single")
+```
+
+```{r}
+plot(gcl, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="Clustering of patients by gene expression")
+axis(side=2, at=seq(0,1.2,.2), col="brown", labels=TRUE, lwd=4)
+abline(h=0.6, lty=2, lwd=2, col="gray")
+```
+
+-   Apart from three misplaced patients, the tree contains two main clusters that correctly corresponed to the two groups.
+
+```{r}
+# 실제 VS cluster 된거 check
+sort(rev(gcl$order)[1:9]) # 제일 오른쪽 cluster의 원소들 9개! -> AML로 판명된것들
+which(gfactor == "AML")
+```
+
+-   Complete, average, centroid
+
+```{r}
+par(mfrow=c(2, 2))
+hc1 <- hclust(dist.cl, method="single")
+plot(hc1, main="Single Linkage", xlab="", sub="", hang=-1)
+abline(h=0.6, lty=2, col="blue")
+hc2 <- hclust(dist.cl, method="complete")
+plot(hc2, main="Complete Linkage", xlab="", sub="", hang=-1)
+abline(h=3, lty=2, col="orange")
+hc3 <- hclust(dist.cl, method="average")
+plot(hc3, main="Average Linkage", xlab="", sub="", hang=-1)
+abline(h=2.0, lty=2, col="green")
+hc4 <- hclust(dist.cl, method="centroid")
+plot(hc4, main="Centroid Linkage", xlab="", sub="", hang=-1)
+abline(h=1, lty=2, col="purple")
+```
+
+### Heatmap

@@ -12,6 +12,13 @@ KIM SANG HYUN(202211545)
   - [K - Means Cluster Algorithm](#k---means-cluster-algorithm)
   - [Example of the K-means
     Clustering](#example-of-the-k-means-clustering)
+  - [Hierarchical Clustering](#hierarchical-clustering)
+  - [Dissimilarity of Clusters](#dissimilarity-of-clusters)
+  - [Type of Linkage](#type-of-linkage)
+  - [Example of Single Linkage](#example-of-single-linkage)
+  - [Example of Hierarchical
+    Clustering](#example-of-hierarchical-clustering)
+  - [Heatmap](#heatmap)
 
 ## 05. Cluster Analysis
 
@@ -338,21 +345,123 @@ data.frame(genes=w, distance=closeto1389_at[[1]]$dists)
 
 - Example : K - means cluster analysis for 2 patients and 50 genes.
 
-- 
-
 ``` r
 set.seed(111)
 x1 <- matrix(rnorm(100, 0, 0.5), ncol=2)
 x2 <- matrix(rnorm(100, 2, 0.5), ncol=2)
 data <- rbind(x1, x2)
+data
 ```
+
+    ##               [,1]         [,2]
+    ##   [1,]  0.11761036  0.095831692
+    ##   [2,] -0.16536794  0.776272136
+    ##   [3,] -0.15581191  0.457121143
+    ##   [4,] -1.15117283  0.179312687
+    ##   [5,] -0.08543802  0.087547818
+    ##   [6,]  0.07013911 -0.423633884
+    ##   [7,] -0.74871333  0.489115829
+    ##   [8,] -0.50509421  0.902934130
+    ##   [9,] -0.47423780  0.061457401
+    ##  [10,] -0.24698111 -0.064886013
+    ##  [11,] -0.08683706 -0.108214330
+    ##  [12,] -0.20329939  0.723239084
+    ##  [13,]  0.92281813  0.204854901
+    ##  [14,]  0.19702705  0.455458286
+    ##  [15,]  0.39876425  0.715179083
+    ##  [16,] -0.78333268 -0.190645978
+    ##  [17,] -0.04292550  0.101153588
+    ##  [18,] -0.17956974 -0.403099597
+    ##  [19,] -0.59680448  0.147317092
+    ##  [20,]  0.18209337  0.702441542
+    ##  [21,]  0.18083123  0.511883423
+    ##  [22,]  0.17348219  0.238063032
+    ##  [23,]  0.09486826 -0.335165165
+    ##  [24,] -0.07978840  0.079617161
+    ##  [25,]  0.16327462 -0.191357692
+    ##  [26,]  0.29912710  0.467881297
+    ##  [27,] -0.92076715 -0.315766134
+    ##  [28,]  1.35902780 -0.049153039
+    ##  [29,]  0.09562220  0.515992492
+    ##  [30,] -0.65064803  0.193904215
+    ##  [31,] -1.55660865 -0.628064657
+    ##  [32,] -0.47067870 -0.393476365
+    ##  [33,]  0.70012939  0.214905774
+    ##  [34,] -0.81023501 -0.188208110
+    ##  [35,] -1.13299798 -0.608114533
+    ##  [36,]  0.58149679  0.514639257
+    ##  [37,] -0.05807752  0.215198500
+    ##  [38,]  0.16712800 -0.622787010
+    ##  [39,] -0.31042905 -0.301364243
+    ##  [40,] -0.65492245  0.330034694
+    ##  [41,] -0.58786302  1.025374763
+    ##  [42,] -0.56060777  0.245404089
+    ##  [43,] -0.68095224 -0.865739709
+    ##  [44,]  0.24056229  0.355441830
+    ##  [45,]  0.37098581  0.006911456
+    ##  [46,]  0.01391231 -0.700520799
+    ##  [47,]  0.16568986  0.629561833
+    ##  [48,]  0.32205707 -0.063738759
+    ##  [49,]  1.24283078 -0.364693257
+    ##  [50,]  0.97999085 -0.605680680
+    ##  [51,]  2.29980987  1.954239870
+    ##  [52,]  1.41983524  1.062847095
+    ##  [53,]  2.21954672  1.667918991
+    ##  [54,]  2.10242687  2.101706409
+    ##  [55,]  1.65040933  0.702778303
+    ##  [56,]  1.53668716  1.953133034
+    ##  [57,]  1.49325881  1.786340041
+    ##  [58,]  2.30249353  2.221489639
+    ##  [59,]  2.86720007  1.406096037
+    ##  [60,]  1.82507473  2.313212737
+    ##  [61,]  2.59959275  2.180823301
+    ##  [62,]  2.51195050  1.763519710
+    ##  [63,]  1.97686243  2.472446851
+    ##  [64,]  2.69325421  2.453201124
+    ##  [65,]  0.90236364  2.235886852
+    ##  [66,]  1.93622154  2.194749965
+    ##  [67,]  1.34150158  2.260970134
+    ##  [68,]  1.28653243  2.452226420
+    ##  [69,]  2.43972082  2.848395463
+    ##  [70,]  2.19699579  1.557831282
+    ##  [71,]  2.34446274  2.428244851
+    ##  [72,]  3.17685825  2.087471225
+    ##  [73,]  1.49245116  1.800747519
+    ##  [74,]  2.14548876  2.137601281
+    ##  [75,]  2.78266304  1.365640600
+    ##  [76,]  1.57644082  1.994959336
+    ##  [77,]  2.66383008  2.326700862
+    ##  [78,]  2.23852317  2.049289990
+    ##  [79,]  2.09262547  2.451308471
+    ##  [80,]  2.12664744  1.740051252
+    ##  [81,]  3.29611368  1.353254510
+    ##  [82,]  2.53717350  1.976551145
+    ##  [83,]  1.20154905  1.682501867
+    ##  [84,]  1.95620570  1.891148864
+    ##  [85,]  2.18038380  1.212579168
+    ##  [86,]  1.56002001  1.861248424
+    ##  [87,]  0.33833252  2.275146104
+    ##  [88,]  1.76624227  1.694526691
+    ##  [89,]  2.21577013  0.932567274
+    ##  [90,]  1.69800527  2.349638719
+    ##  [91,]  2.33722335  2.538597983
+    ##  [92,]  2.31796027  2.433959079
+    ##  [93,]  1.69351481  1.604630311
+    ##  [94,]  2.20744567  1.945334913
+    ##  [95,]  2.43867169  1.534824969
+    ##  [96,]  2.01057879  1.816439368
+    ##  [97,]  2.90519165  1.553542846
+    ##  [98,]  1.77395215  1.821113596
+    ##  [99,]  1.93743801  1.866268938
+    ## [100,]  2.38340021  1.844040251
 
 - 데이터 구조 확인하기
 
 - `nstart` : 몇 번 반복할 것인가..?
 
 ``` r
-cl <- kmeans(data, 2, nstart=20)
+cl <- kmeans(data, centers = 2, nstart=20)
+
 cl
 ```
 
@@ -376,6 +485,11 @@ cl
     ## 
     ## [1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
     ## [6] "betweenss"    "size"         "iter"         "ifault"
+
+- 분산 설명 비율 -\> 79.2%
+
+- 전체 데이터의 분산 중에서 , **군집 간의 차이**로 설명 가능한 비율!!
+  -\> 높을수록 굿!
 
 ``` r
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
@@ -403,7 +517,8 @@ tv <- round(cl$tot.withinss, 3)
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
 main=paste("(", tv, ")"))
 points(cl$centers, col=1:2, pch=8, cex=4)
-cl <- kmeans(data, 3, nstart=20)
+
+cl <- kmeans(data, 3, nstart=20) # 여러번 반복하니깐 TWV가 역시 줄어든다!
 tv <- round(cl$tot.withinss, 3)
 plot(data, col=cl$cluster, pch=19, xlab="X1", ylab="X2",
 main=paste("(", tv, ")"))
@@ -411,6 +526,11 @@ points(cl$centers, col=1:2, pch=8, cex=4)
 ```
 
 ![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+- Example of Application to the Golub data.
+
+  - We found that the expression values of the genes CCND3 and Zyxin are
+    closely related to the distinction between ALL and AML.
 
 ``` r
 data(golub, package="multtest")
@@ -422,7 +542,7 @@ colnames(data) <- c("CCND3 (Cyclin D3)", "Zyxin")
 
 ``` r
 cl <- kmeans(data, 2, nstart=20)
-cbind(cl$cluster, golub.cl)
+cbind(cl$cluster, golub.cl) # -> clustering 잘되었노!
 ```
 
     ##         golub.cl
@@ -512,3 +632,226 @@ points(cl$centers, col=1:4, pch=8, cex=4)
 ```
 
 ![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+### Hierarchical Clustering
+
+- K-means clustering requires us to pre-specify the number of clusters
+  $K$. This can be a disadvantage.
+
+- Hierarchical Clustering is an alternative approach which does not
+  require that \*\*we commit to a particular choice of $K$.\*\*
+
+- HC results in an attractive tree-based representation of the
+  observations, called a dendrogram.
+
+- We describe bottom-up or agglomerative clustering. This is the most
+  common type of hierarchical clustering, and refers to the fact that a
+  dendrogram is built starting from the leaves and combining clusters up
+  to the trunk.
+
+- Hierarchical clustering starts with each point in its own cluster, and
+  identify the closest two clusters and merge them, until all points are
+  in a single cluster.
+
+![](images/clipboard-454167237.png)
+
+![](images/clipboard-4104911788.png)
+
+- 덴드로그랩에서 가로축 상의 가까운 위치만 보고 두 개체가 유사하다고
+  판단하면 안된다.
+
+- 두 관측치가 유사한지는, 각각이 속한 가지가 수직축의 어느 높이에서
+  처음으로 합쳐지는지를 보고 판단해야 한다.
+
+### Dissimilarity of Clusters
+
+- 계층적 군집 알고리즘은 덴드로그램의 맨 아래에서 시작하며, 각 관측치를
+  독립적인 군집으로 취급한다.
+
+- 그 후 가장 유사한 두 군집을 계속 합쳐가며, 결국 하나의 큰 군집이 될
+  때까지 반복한다.
+
+- 관측치 간의 dissimilarity는 유클리드 거리로 측정할 수 있다.
+
+- 그럼 군집은??? -\> by Linkage!
+
+### Type of Linkage
+
+![](images/clipboard-2386013967.png)
+
+### Example of Single Linkage
+
+- Example : Single linkage with 5 genes.
+
+``` r
+names <- list(c("g1", "g2", "g3", "g4", "g5"),
+c("patient 1", "patient 2"))
+sl <- matrix(c(1, 1, 1, 1.3, 3, 2, 3, 2.4, 5, 5), ncol=2, 
+             byrow=TRUE, dimnames=names)
+```
+
+``` r
+rr <- c(0, 6)
+plot(sl, pch=19, col="blue", cex=1.4, xlim=rr, ylim=rr)
+text(sl, labels=row.names(sl), pos=4, col="red", cex=1.2)
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+print(dist(sl, method="euclidean"), digits=3)
+```
+
+    ##      g1   g2   g3   g4
+    ## g2 0.30               
+    ## g3 2.24 2.12          
+    ## g4 2.44 2.28 0.40     
+    ## g5 5.66 5.45 3.61 3.28
+
+``` r
+ds <- dist(sl, method="euclidean")
+sl.out <- hclust(ds, method="single")
+sl.out
+```
+
+    ## 
+    ## Call:
+    ## hclust(d = ds, method = "single")
+    ## 
+    ## Cluster method   : single 
+    ## Distance         : euclidean 
+    ## Number of objects: 5
+
+``` r
+plot(sl.out, lwd=3, col="blue", col.axis = "brown",
+hang=-1, main=NA, sub=NA, axes=FALSE, ylab="Distance",
+xlab="Clustering of the expression of 5 genes")
+axis(side=2, at=seq(0,3.5,.5), col="brown", labels=TRUE, lwd=4)
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+- Example of Random Data
+
+``` r
+set.seed(12345)
+x <- rnorm(20)
+out <- hclust(dist(x, method="euclidean"), method="single")
+plot(out, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="20 genes with normal random distances")
+axis(side=2, at=seq(0,1.4,.2), col="brown", labels=TRUE, lwd=4)
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+> This example highlights an important caveat about clustering
+>
+> - clustering will always produce clusters in your data even if all the
+>   data is sampled from identical distributions.
+
+``` r
+set.seed(4321)
+x <- c(rnorm(10, 0, 0.1), rnorm(10, 3, 0.5),
+rnorm(10, 10, 1.0))
+out <- hclust(dist(x, method="euclidean"), method="single")
+out
+```
+
+    ## 
+    ## Call:
+    ## hclust(d = dist(x, method = "euclidean"), method = "single")
+    ## 
+    ## Cluster method   : single 
+    ## Distance         : euclidean 
+    ## Number of objects: 30
+
+- 분산이 작다 -\> 옹기종기 모여있다 -\> 그럼 빨리 군집화된다-\>
+  군집화되는 height가 작다!
+
+``` r
+plot(out, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="3 clusters of 10 genes each")
+axis(side=2, at=seq(0, 5, 1), col="brown", labels=TRUE, lwd=4)
+abline(h=1, lty=2, lwd=2, col="gray")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+### Example of Hierarchical Clustering
+
+- Example : Application to the Golub data.
+
+``` r
+data(golub, package="multtest")
+zyxin <- grep("Zyxin", golub.gnames[ ,2])
+ccnd3 <- grep("CCND3", golub.gnames[ ,2])
+```
+
+``` r
+clusdata <- data.frame(golub[ccnd3, ], golub[zyxin, ])
+colnames(clusdata) <- c("CCND3 Cyclin D3", "Zyxin")
+gfactor <- factor(golub.cl, levels=0:1, labels=c("ALL", "AML"))
+```
+
+``` r
+gf <- as.numeric(gfactor)
+plot(clusdata, pch=gf+15, col=gf+1)
+legend("topright", legend=c("ALL", "AML"), pch=16:17, col=c(2,3))
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+dist.cl <- dist(clusdata, method="euclidean")
+gcl <- hclust(dist.cl, method="single")
+```
+
+``` r
+plot(gcl, lwd=3, col="blue", hang=-1, main=NA, sub=NA,
+axes=FALSE, ylab="Distance",
+xlab="Clustering of patients by gene expression")
+axis(side=2, at=seq(0,1.2,.2), col="brown", labels=TRUE, lwd=4)
+abline(h=0.6, lty=2, lwd=2, col="gray")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+- Apart from three misplaced patients, the tree contains two main
+  clusters that correctly corresponed to the two groups.
+
+``` r
+# 실제 VS cluster 된거 check
+sort(rev(gcl$order)[1:9]) # 제일 오른쪽 cluster의 원소들 9개! -> AML로 판명된것들
+```
+
+    ## [1] 28 30 31 32 33 34 36 37 38
+
+``` r
+which(gfactor == "AML")
+```
+
+    ##  [1] 28 29 30 31 32 33 34 35 36 37 38
+
+- Complete, average, centroid
+
+``` r
+par(mfrow=c(2, 2))
+hc1 <- hclust(dist.cl, method="single")
+plot(hc1, main="Single Linkage", xlab="", sub="", hang=-1)
+abline(h=0.6, lty=2, col="blue")
+hc2 <- hclust(dist.cl, method="complete")
+plot(hc2, main="Complete Linkage", xlab="", sub="", hang=-1)
+abline(h=3, lty=2, col="orange")
+hc3 <- hclust(dist.cl, method="average")
+plot(hc3, main="Average Linkage", xlab="", sub="", hang=-1)
+abline(h=2.0, lty=2, col="green")
+hc4 <- hclust(dist.cl, method="centroid")
+plot(hc4, main="Centroid Linkage", xlab="", sub="", hang=-1)
+abline(h=1, lty=2, col="purple")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+### Heatmap
