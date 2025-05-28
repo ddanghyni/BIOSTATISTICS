@@ -19,6 +19,12 @@ KIM SANG HYUN(202211545)
   - [Example of Hierarchical
     Clustering](#example-of-hierarchical-clustering)
   - [Heatmap](#heatmap)
+  - [The Correlation Coefficient](#the-correlation-coefficient)
+  - [Example of The Correlation
+    Coefficient](#example-of-the-correlation-coefficient)
+  - [PCA](#pca)
+  - [Example of PCA](#example-of-pca)
+  - [](#section)
 
 ## 05. Cluster Analysis
 
@@ -855,3 +861,356 @@ abline(h=1, lty=2, col="purple")
 ![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ### Heatmap
+
+- Let’s generate a heatmap using just the top 50 most differentially
+  expressed genes between ALL and AML patients.
+
+``` r
+data(golub, package="multtest")
+gFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML"))
+meanALL <- apply(golub[ ,gFactor=="ALL"], 1, mean)
+meanAML <- apply(golub[ ,gFactor=="AML"], 1, mean)
+o <- order(abs(meanALL - meanAML), decreasing=TRUE)
+DE50 <- golub[o[1:50], ]
+hist(DE50, nclass=50, col="orange")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+``` r
+library(gplots)
+heatmap.2(DE50, Rowv=NA, Colv=NA, scale="row", cexRow=0.5,
+col=greenred(75), dendrogram="none", key=TRUE,
+symkey=FALSE, density.info="none", trace="none")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
+heatmap.2(DE50, scale="row", col=greenred(75),
+dendrogram="both", key=TRUE, symkey=FALSE,
+density.info="none", trace="none", cexRow=0.5)
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+
+### The Correlation Coefficient
+
+- A correlation coefficient measures the degree of linear relationship
+  between two sets of gene expression values/
+
+  ![](images/clipboard-3996496632.png)
+  ![](images/clipboard-973773893.png)
+
+### Example of The Correlation Coefficient
+
+- Example : MCM3 gene expression.
+
+``` r
+data(golub, package="multtest")
+mcm3 <- grep("MCM3", golub.gnames[, 2])
+```
+
+``` r
+golub.gnames[mcm3, ]
+```
+
+    ##      [,1]   [,2]                                                         
+    ## [1,] "5254" "MCM3 Minichromosome maintenance deficient (S. cerevisiae) 3"
+    ## [2,] "5625" "MCM3 Minichromosome maintenance deficient (S. cerevisiae) 3"
+    ##      [,3]         
+    ## [1,] "D38073_at"  
+    ## [2,] "X62153_s_at"
+
+``` r
+x <- golub[mcm3[1], ]
+y <- golub[mcm3[2], ]
+
+cor(x,y)
+```
+
+    ## [1] 0.6376217
+
+``` r
+cov(scale(x), scale(y))
+```
+
+    ##           [,1]
+    ## [1,] 0.6376217
+
+``` r
+plot(x,y, pch=19, col="blue3")
+abline(lm(y~x)$coef, col=2, lty=2, lwd=2)
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+``` r
+cor.test(x,y)
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  x and y
+    ## t = 4.9662, df = 36, p-value = 1.666e-05
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.3993383 0.7952115
+    ## sample estimates:
+    ##       cor 
+    ## 0.6376217
+
+``` r
+B = 10000
+per.cor = NULL
+```
+
+``` r
+set.seed(1010)
+for (i in 1:B){
+  index1 = sample(1:length(x))
+  index2 = sample(1:length(y))
+  per.cor[i] = cor(x[index1], y[index2])
+}
+```
+
+- 귀무가설 x ,y 상관없음 하에서 얻을 수 있는 상관계수의 분포
+
+``` r
+hist(per.cor, nclass = 50, col= "orange")
+c0 = cor(x, y)
+abline(v = c(-c0, c0), lty = 2, lwd = 2, col = "blue")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+
+``` r
+(sum(abs(per.cor) > abs(c0)) + 1) / (B + 1)
+```
+
+    ## [1] 0.00019998
+
+> 파란 선이 분포의 끝에 있다는 건, 관측된 상관계수가 귀무분포에서 매우
+> 희귀한 값이란 뜻 → H₀ 기각 → 상관 있음
+
+``` r
+B = 10000
+boot.cor = rep(0 ,B)
+data = cbind(x, y)
+```
+
+``` r
+set.seed(1)
+for (i in 1:B){
+  index = sample(1:nrow(data), replace = TRUE)
+  dat.star = data[index, ]
+  boot.cor[i] = cor(dat.star)[1, 2]
+}
+```
+
+``` r
+hist(boot.cor, nclass=50, col="orange")
+CI <- quantile(boot.cor, c(0.025, 0.975))
+abline(v=CI, lty=2, lwd=2, col="blue")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+
+> 이 그래프는 “데이터의 두 변수는 부트스트랩 상관계수 기준으로 **약
+> 0.2~0.9 사이의 신뢰구간**을 가지며,
+>
+> **명백히 양의 상관관계를 가진다**”는 것을 보여준다.
+
+``` r
+mean(boot.cor)
+```
+
+    ## [1] 0.6511411
+
+``` r
+CI
+```
+
+    ##      2.5%     97.5% 
+    ## 0.2204652 0.9205734
+
+- Example : Application to the Golub data.
+
+``` r
+y = golub.cl
+y
+```
+
+    ##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1
+
+``` r
+corgol = apply(golub, 1, function(x) cor(x, y))
+```
+
+``` r
+top <- 10
+ot <- o[1:top]
+data.frame(genes=golub.gnames[ot, 3], cor=corgol[ot])
+```
+
+    ##               genes        cor
+    ## 1         M27891_at  0.8631427
+    ## 2       Y00787_s_at  0.7356337
+    ## 3  M28130_rna1_s_at  0.7551832
+    ## 4         M84526_at  0.7905760
+    ## 5         M19507_at  0.6705210
+    ## 6    X82240_rna1_at -0.5399031
+    ## 7    M96326_rna1_at  0.6926718
+    ## 8         D88422_at  0.8153174
+    ## 9    U05259_rna1_at -0.6270897
+    ## 10      M63438_s_at  0.5760259
+
+``` r
+fun <- function(x) summary(lm(x ~ y))$fstat[1]
+fstat <- apply(golub, 1, fun)
+o2 <- order(fstat, decreasing=TRUE)
+```
+
+- 두 방법 모두 유전자 발현과 두 환자 그룹(ALL/AML) 간의 연관성 강도를
+  측정한다.
+
+``` r
+top <- 10
+ot2 <- o2[1:top]
+data.frame(genes=golub.gnames[ot2, 3], f.stat=fstat[ot2])
+```
+
+    ##               genes    f.stat
+    ## 1         M27891_at 105.18500
+    ## 2         D88422_at  71.38012
+    ## 3         X95735_at  66.68372
+    ## 4         M23197_at  63.70090
+    ## 5  U22376_cds2_s_at  61.70403
+    ## 6  HG1612-HT1612_at  61.41398
+    ## 7       M27783_s_at  60.09061
+    ## 8         M84526_at  60.00266
+    ## 9         X74262_at  58.31000
+    ## 10        M63138_at  50.53058
+
+``` r
+# corr이랑 ranking이랑 같다!
+par(mfrow=c(1, 2))
+hist(abs(corgol), nclass=20, col="orange", xlab="",
+main="Absolute values of PCC")
+hist(fstat, nclass=20, col="lightblue", xlab="",
+main="F test statistics")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
+
+### PCA
+
+### Example of PCA
+
+- Example: Application to thee Golub data
+
+``` r
+data(golub, package="multtest")
+cgolub <- cor(golub)
+dim(cgolub)
+```
+
+    ## [1] 38 38
+
+``` r
+e <- eigen(cgolub)
+dim(e$vector)
+```
+
+    ## [1] 38 38
+
+``` r
+e$values
+```
+
+    ##  [1] 25.43826289  2.07571577  1.24844111  1.07133729  0.73652316  0.55352401
+    ##  [7]  0.51989272  0.47930972  0.40729024  0.40488328  0.32148354  0.30539897
+    ## [13]  0.29017757  0.27051931  0.24569473  0.23427321  0.22771204  0.22153717
+    ## [19]  0.20630739  0.19179737  0.18844218  0.18041023  0.17290705  0.16579519
+    ## [25]  0.16053089  0.15584871  0.15000959  0.14758770  0.14350528  0.13782128
+    ## [31]  0.13658502  0.12932904  0.12907685  0.12443678  0.11708536  0.11041217
+    ## [37]  0.10609040  0.09404478
+
+``` r
+plot(e$values, type="b", pch=19, col=2, ylab="eigenvalues",
+xlab="the number of components")
+```
+
+![](Lecture-5---Cluster-Analysis_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+- We apply the previous bootstrap method th estimate 95% CI for the
+  eigenvalues.
+
+- 기존 데이터에서 boostrap으로 p개의 행을 중복을 허용해서 새로운 데이터
+  세트를 만들고 p x n 사이즈의 데이터를 그리고 그걸로 eigen을 구한다 -\>
+  10000번 반복 ㄱㄱㅎ
+
+``` r
+n = ncol(golub)
+p = nrow(golub)
+B = 10000
+```
+
+``` r
+set.seed(10101)
+eval = matrix(0, B, n)
+for (i in 1:B){
+  index = sample(1:p, replace = TRUE)
+  boot = golub[index,]
+  eval[i,] = eigen(cor(boot))$values
+}
+
+CI = apply(eval ,2, function(t) quantile(t, c(0.025, 0.975)))
+```
+
+``` r
+t(CI)
+```
+
+    ##              2.5%       97.5%
+    ##  [1,] 24.84196952 26.01610814
+    ##  [2,]  1.93069081  2.24617656
+    ##  [3,]  1.14548949  1.39624608
+    ##  [4,]  0.99083223  1.14958093
+    ##  [5,]  0.68565401  0.80213245
+    ##  [6,]  0.52477519  0.60727899
+    ##  [7,]  0.48819676  0.55839480
+    ##  [8,]  0.44323871  0.51550699
+    ##  [9,]  0.39064479  0.45053631
+    ## [10,]  0.36679151  0.42336103
+    ## [11,]  0.30719862  0.35073755
+    ## [12,]  0.28736011  0.33034276
+    ## [13,]  0.27136992  0.30986015
+    ## [14,]  0.25289316  0.28876354
+    ## [15,]  0.23494336  0.26685934
+    ## [16,]  0.22454092  0.25295953
+    ## [17,]  0.21435654  0.24251764
+    ## [18,]  0.20480100  0.23194542
+    ## [19,]  0.19332686  0.21969302
+    ## [20,]  0.18335874  0.20770280
+    ## [21,]  0.17592208  0.19868780
+    ## [22,]  0.16875535  0.19042171
+    ## [23,]  0.16184542  0.18235458
+    ## [24,]  0.15605025  0.17519482
+    ## [25,]  0.15051842  0.16868552
+    ## [26,]  0.14550910  0.16305487
+    ## [27,]  0.14067301  0.15756471
+    ## [28,]  0.13634324  0.15256153
+    ## [29,]  0.13218505  0.14783863
+    ## [30,]  0.12792640  0.14324794
+    ## [31,]  0.12368346  0.13880419
+    ## [32,]  0.11937311  0.13422567
+    ## [33,]  0.11513771  0.12972337
+    ## [34,]  0.11041735  0.12517493
+    ## [35,]  0.10448490  0.11938152
+    ## [36,]  0.09882637  0.11311811
+    ## [37,]  0.09324591  0.10752260
+    ## [38,]  0.08270835  0.09732998
+
+### 

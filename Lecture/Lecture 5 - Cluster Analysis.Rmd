@@ -383,3 +383,197 @@ abline(h=1, lty=2, col="purple")
 ```
 
 ### Heatmap
+
+-   Let's generate a heatmap using just the top 50 most differentially expressed genes between ALL and AML patients.
+
+```{r}
+data(golub, package="multtest")
+gFactor <- factor(golub.cl, levels=0:1, labels=c("ALL","AML"))
+meanALL <- apply(golub[ ,gFactor=="ALL"], 1, mean)
+meanAML <- apply(golub[ ,gFactor=="AML"], 1, mean)
+o <- order(abs(meanALL - meanAML), decreasing=TRUE)
+DE50 <- golub[o[1:50], ]
+hist(DE50, nclass=50, col="orange")
+```
+
+```{r}
+library(gplots)
+heatmap.2(DE50, Rowv=NA, Colv=NA, scale="row", cexRow=0.5,
+col=greenred(75), dendrogram="none", key=TRUE,
+symkey=FALSE, density.info="none", trace="none")
+```
+
+```{r}
+heatmap.2(DE50, scale="row", col=greenred(75),
+dendrogram="both", key=TRUE, symkey=FALSE,
+density.info="none", trace="none", cexRow=0.5)
+```
+
+### The Correlation Coefficient
+
+-   A correlation coefficient measures the degree of linear relationship between two sets of gene expression values/
+
+    ![](images/clipboard-3996496632.png) ![](images/clipboard-973773893.png)
+
+### Example of The Correlation Coefficient
+
+-   Example : MCM3 gene expression.
+
+```{r}
+data(golub, package="multtest")
+mcm3 <- grep("MCM3", golub.gnames[, 2])
+```
+
+```{r}
+golub.gnames[mcm3, ]
+x <- golub[mcm3[1], ]
+y <- golub[mcm3[2], ]
+
+cor(x,y)
+cov(scale(x), scale(y))
+
+plot(x,y, pch=19, col="blue3")
+abline(lm(y~x)$coef, col=2, lty=2, lwd=2)
+cor.test(x,y)
+```
+
+```{r}
+B = 10000
+per.cor = NULL
+```
+
+```{r}
+set.seed(1010)
+for (i in 1:B){
+  index1 = sample(1:length(x))
+  index2 = sample(1:length(y))
+  per.cor[i] = cor(x[index1], y[index2])
+}
+```
+
+-   귀무가설 x ,y 상관없음 하에서 얻을 수 있는 상관계수의 분포
+
+```{r}
+hist(per.cor, nclass = 50, col= "orange")
+c0 = cor(x, y)
+abline(v = c(-c0, c0), lty = 2, lwd = 2, col = "blue")
+```
+
+```{r}
+(sum(abs(per.cor) > abs(c0)) + 1) / (B + 1)
+```
+
+> 파란 선이 분포의 끝에 있다는 건, 관측된 상관계수가 귀무분포에서 매우 희귀한 값이란 뜻 → H₀ 기각 → 상관 있음
+
+```{r}
+B = 10000
+boot.cor = rep(0 ,B)
+data = cbind(x, y)
+```
+
+```{r}
+set.seed(1)
+for (i in 1:B){
+  index = sample(1:nrow(data), replace = TRUE)
+  dat.star = data[index, ]
+  boot.cor[i] = cor(dat.star)[1, 2]
+}
+```
+
+```{r}
+hist(boot.cor, nclass=50, col="orange")
+CI <- quantile(boot.cor, c(0.025, 0.975))
+abline(v=CI, lty=2, lwd=2, col="blue")
+```
+
+> 이 그래프는 "데이터의 두 변수는 부트스트랩 상관계수 기준으로 **약 0.2\~0.9 사이의 신뢰구간**을 가지며,
+>
+> **명백히 양의 상관관계를 가진다**"는 것을 보여준다.
+
+```{r}
+mean(boot.cor)
+CI
+```
+
+-   Example : Application to the Golub data.
+
+```{r}
+y = golub.cl
+y
+```
+
+```{r}
+corgol = apply(golub, 1, function(x) cor(x, y))
+```
+
+```{r}
+top <- 10
+ot <- o[1:top]
+data.frame(genes=golub.gnames[ot, 3], cor=corgol[ot])
+```
+
+```{r}
+fun <- function(x) summary(lm(x ~ y))$fstat[1]
+fstat <- apply(golub, 1, fun)
+o2 <- order(fstat, decreasing=TRUE)
+```
+
+-   두 방법 모두 유전자 발현과 두 환자 그룹(ALL/AML) 간의 연관성 강도를 측정한다.
+
+```{r}
+top <- 10
+ot2 <- o2[1:top]
+data.frame(genes=golub.gnames[ot2, 3], f.stat=fstat[ot2])
+# corr이랑 ranking이랑 같다!
+par(mfrow=c(1, 2))
+hist(abs(corgol), nclass=20, col="orange", xlab="",
+main="Absolute values of PCC")
+hist(fstat, nclass=20, col="lightblue", xlab="",
+main="F test statistics")
+```
+
+### PCA
+
+### Example of PCA
+
+-   Example: Application to thee Golub data
+
+```{r}
+data(golub, package="multtest")
+cgolub <- cor(golub)
+dim(cgolub)
+e <- eigen(cgolub)
+dim(e$vector)
+e$values
+plot(e$values, type="b", pch=19, col=2, ylab="eigenvalues",
+xlab="the number of components")
+```
+
+-   We apply the previous bootstrap method th estimate 95% CI for the eigenvalues.
+
+-    기존 데이터에서 boostrap으로 p개의 행을 중복을 허용해서 새로운 데이터 세트를 만들고 p x n
+    사이즈의 데이터를 그리고 그걸로 eigen을 구한다 -\> 10000번 반복 ㄱㄱㅎ
+
+```{r}
+n = ncol(golub)
+p = nrow(golub)
+B = 10000
+```
+
+```{r}
+set.seed(10101)
+eval = matrix(0, B, n)
+for (i in 1:B){
+  index = sample(1:p, replace = TRUE)
+  boot = golub[index,]
+  eval[i,] = eigen(cor(boot))$values
+}
+
+CI = apply(eval ,2, function(t) quantile(t, c(0.025, 0.975)))
+```
+
+```{r}
+t(CI)
+```
+
+### 
