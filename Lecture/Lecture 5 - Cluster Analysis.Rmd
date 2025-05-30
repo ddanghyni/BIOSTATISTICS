@@ -551,8 +551,7 @@ xlab="the number of components")
 
 -   We apply the previous bootstrap method th estimate 95% CI for the eigenvalues.
 
--    기존 데이터에서 boostrap으로 p개의 행을 중복을 허용해서 새로운 데이터 세트를 만들고 p x n
-    사이즈의 데이터를 그리고 그걸로 eigen을 구한다 -\> 10000번 반복 ㄱㄱㅎ
+-   기존 데이터에서 boostrap으로 p개의 행을 중복을 허용해서 새로운 데이터 세트를 만들고 p x n 사이즈의 데이터를 그리고 그걸로 eigen을 구한다 -\> 10000번 반복 ㄱㄱㅎ
 
 ```{r}
 n = ncol(golub)
