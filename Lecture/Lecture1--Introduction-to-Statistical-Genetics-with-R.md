@@ -13,6 +13,53 @@ Lecture1: Introduction to Statistical Genetics with R
 - [ALL Data Example](#all-data-example)
 - [golub Data example](#golub-data-example)
 - [`grep()`](#grep)
+- [Rcode 정리본](#rcode-정리본)
+- [HW_1 코드 정리본](#hw_1-코드-정리본)
+  - [1. For each **cancer cell line**, compute average gene expression
+    values. Identify **two cell lines** that have the largest and the
+    smallest mean values. Also, include the maximun and minimum mean
+    values.](#1-for-each-cancer-cell-line-compute-average-gene-expression-values-identify-two-cell-lines-that-have-the-largest-and-the-smallest-mean-values-also-include-the-maximun-and-minimum-mean-values)
+  - [2. For each **gene**, compute average gene expression values of 64
+    cancer cell lines, including “UNKNOWN” label. Identify **top 5
+    gene** that have the **largest mean expression values** and top 5
+    genes that have **smallest mean expression values**. Also, include
+    their mean values with **gene ID
+    number(1~6830)**.](#2-for-each-gene-compute-average-gene-expression-values-of-64-cancer-cell-lines-including-unknown-label-identify-top-5-gene-that-have-the-largest-mean-expression-values-and-top-5-genes-that-have-smallest-mean-expression-values-also-include-their-mean-values-with-gene-id-number16830)
+  - [3. Suppose that group “A” contains “BREAST” and “NSCLC”, group “B”
+    has “MELANOMA”, “OVARIAN” and “PROSTATE”, and group “C” has
+    “LEUKEMIA”, “RENAL” and “UNKNOWN”. The other 6 cell lines belong to
+    group “D”. For each cancer group, compute the mean expression values
+    and the standard deviation of **gene experssion
+    values**.](#3-suppose-that-group-a-contains-breast-and-nsclc-group-b-has-melanoma-ovarian-and-prostate-and-group-c-has-leukemia-renal-and-unknown-the-other-6-cell-lines-belong-to-group-d-for-each-cancer-group-compute-the-mean-expression-values-and-the-standard-deviation-of-gene-experssion-values)
+  - [4. For each cancer group defined in Q3, compute the sample SD of
+    gene expression values of individual genes. Find genes whose SD is
+    less than 0.2 or greater than 2 for each cancer group, i.e.,
+    $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different
+    cancer groups? How many genes are overlapped by exactly 3 different
+    cancer groups? or exactly 2 different cancer groups? Also, how many
+    genes are uniquely identified by only one cancer group? Summarize
+    your answer, using the following
+    table.](#4-for-each-cancer-group-defined-in-q3-compute-the-sample-sd-of-gene-expression-values-of-individual-genes-find-genes-whose-sd-is-less-than-02-or-greater-than-2-for-each-cancer-group-ie-sd--02-or-sd--2-how-many-genes-are-overlapped-by-4-different-cancer-groups-how-many-genes-are-overlapped-by-exactly-3-different-cancer-groups-or-exactly-2-different-cancer-groups-also-how-many-genes-are-uniquely-identified-by-only-one-cancer-group-summarize-your-answer-using-the-following-table)
+  - [5. For each gene, compute the pairwise difference in mean
+    expression values among 4 different cancer groups. Note that there
+    are a total of 6 pairs among 4 cancer groups. Which gene and which
+    cancer group pair have the largest difference in mean expression
+    values? You should report the numerical value of the largest
+    difference along with the gene ID number. Also, identify the
+    corresponding cancer group pair that has the largest
+    difference.](#5-for-each-gene-compute-the-pairwise-difference-in-mean-expression-values-among-4-different-cancer-groups-note-that-there-are-a-total-of-6-pairs-among-4-cancer-groups-which-gene-and-which-cancer-group-pair-have-the-largest-difference-in-mean-expression-values-you-should-report-the-numerical-value-of-the-largest-difference-along-with-the-gene-id-number-also-identify-the-corresponding-cancer-group-pair-that-has-the-largest-difference)
+  - [6. Only 9 different cancer cell lines have at least 2 samples. For
+    each of these 9 cell lines, compute the pairwise distance of
+    expression values between two samples $(i, j)$ s.t
+    $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$
+    where $x_{ik}$ stands for the gene expression value of the $i$-th
+    sample and the $k$-th gene, and $p=6,830$. Which cell line and two
+    samples have the smallest pairwise distance? Include the nummerical
+    value of the smallest distance with two sample ID number (1 ~ 64)
+    and the name of the corresponding cancer cell line. Note that
+    computation of distance between two samples is limited the same
+    cancer cell
+    line.](#6-only-9-different-cancer-cell-lines-have-at-least-2-samples-for-each-of-these-9-cell-lines-compute-the-pairwise-distance-of-expression-values-between-two-samples-i-j-st--disti-j-sqrtsum_k1p-biglx_ik---x_jkbigr2-where-x_ik-stands-for-the-gene-expression-value-of-the-i-th-sample-and-the-k-th-gene-and-p6830-which-cell-line-and-two-samples-have-the-smallest-pairwise-distance-include-the-nummerical-value-of-the-smallest-distance-with-two-sample-id-number-1--64-and-the-name-of-the-corresponding-cancer-cell-line-note-that-computation-of-distance-between-two-samples-is-limited-the-same-cancer-cell-line)
 
 - 2025-03-11
 
@@ -290,9 +337,9 @@ list1
     ## [1] "p53" "p63" "p73"
     ## 
     ## [[2]]
-    ##            [,1]       [,2]       [,3]       [,4]      [,5]
-    ## [1,] -1.7907138 -0.4335810  0.4650249 -1.6288863 0.4887212
-    ## [2,] -0.9675878 -0.6466939 -1.4194271 -0.6574175 1.6158467
+    ##            [,1]       [,2]       [,3]       [,4]       [,5]
+    ## [1,] -0.2435129  0.3680424 -0.2032022 -0.3573451 -0.9185802
+    ## [2,]  0.3648501 -1.0572240  1.9883392 -1.1324987  0.2593213
     ## 
     ## [[3]]
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -311,9 +358,9 @@ list2
     ## [1] "p53" "p63" "p73"
     ## 
     ## $geneExpression
-    ##            [,1]        [,2]       [,3]      [,4]       [,5]
-    ## [1,] -0.1509777 -0.04028335  1.0480371 -1.321044  0.3424449
-    ## [2,] -1.5599150 -1.64002314 -0.3868222  1.557600 -0.5661659
+    ##            [,1]        [,2]      [,3]      [,4]       [,5]
+    ## [1,] -0.6142264 -0.04784868 -1.570236 -1.444287  0.6271561
+    ## [2,] -1.0653197  1.04856711  2.048901 -0.609338 -1.5107841
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -358,9 +405,9 @@ list2
     ## [1] "her2" "p63"  "p73" 
     ## 
     ## $geneExpression
-    ##            [,1]        [,2]       [,3]      [,4]       [,5]
-    ## [1,] -0.1509777 -0.04028335  1.0480371 -1.321044  0.3424449
-    ## [2,] -1.5599150 -1.64002314 -0.3868222  1.557600 -0.5661659
+    ##            [,1]        [,2]      [,3]      [,4]       [,5]
+    ## [1,] -0.6142264 -0.04784868 -1.570236 -1.444287  0.6271561
+    ## [2,] -1.0653197  1.04856711  2.048901 -0.609338 -1.5107841
     ## 
     ## $remission
     ## [1]  TRUE FALSE  TRUE FALSE FALSE
@@ -369,17 +416,17 @@ list2
 list2[[2]]
 ```
 
-    ##            [,1]        [,2]       [,3]      [,4]       [,5]
-    ## [1,] -0.1509777 -0.04028335  1.0480371 -1.321044  0.3424449
-    ## [2,] -1.5599150 -1.64002314 -0.3868222  1.557600 -0.5661659
+    ##            [,1]        [,2]      [,3]      [,4]       [,5]
+    ## [1,] -0.6142264 -0.04784868 -1.570236 -1.444287  0.6271561
+    ## [2,] -1.0653197  1.04856711  2.048901 -0.609338 -1.5107841
 
 ``` r
 list2$geneExpression
 ```
 
-    ##            [,1]        [,2]       [,3]      [,4]       [,5]
-    ## [1,] -0.1509777 -0.04028335  1.0480371 -1.321044  0.3424449
-    ## [2,] -1.5599150 -1.64002314 -0.3868222  1.557600 -0.5661659
+    ##            [,1]        [,2]      [,3]      [,4]       [,5]
+    ## [1,] -0.6142264 -0.04784868 -1.570236 -1.444287  0.6271561
+    ## [2,] -1.0653197  1.04856711  2.048901 -0.609338 -1.5107841
 
 ``` r
 list2[[3]]
@@ -701,7 +748,7 @@ str(ALL)
     ##   .. .. .. .. ..@ .Data:List of 1
     ##   .. .. .. .. .. ..$ : int [1:3] 1 0 0
     ##   .. .. .. .. ..$ names: chr "MIAME"
-    ##   ..@ assayData        :<environment: 0x1380dd1f0> 
+    ##   ..@ assayData        :<environment: 0x129ce9158> 
     ##   ..@ phenoData        :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
     ##   .. .. ..@ varMetadata      :'data.frame':  21 obs. of  1 variable:
     ##   .. .. .. ..$ labelDescription: chr [1:21] " Patient ID" " Date of diagnosis" " Gender of the patient" " Age of the patient at entry" ...
@@ -1185,17 +1232,16 @@ golub.gnames[ccnd3,]
 not_cd33 <- grep("CD33", golub.gnames[,2], ignore.case=TRUE, invert=TRUE)
 ```
 
-> \`\`\` in python df\[df\[‘column’\].str.contains(“CD33”, case=False)\]
+<hr>
 
+# Rcode 정리본
 
-    # Rcode 정리본
+``` r
+# Computing on a data matrix ----------------------------------------------
 
-
-    ``` r
-    # Computing on a data matrix ----------------------------------------------
-
-    gene1 = c(1.00, 1.50, 1.25)
-    gene1
+gene1 = c(1.00, 1.50, 1.25)
+gene1
+```
 
     ## [1] 1.00 1.50 1.25
 
@@ -1612,7 +1658,7 @@ str(ALL)
     ##   .. .. .. .. ..@ .Data:List of 1
     ##   .. .. .. .. .. ..$ : int [1:3] 1 0 0
     ##   .. .. .. .. ..$ names: chr "MIAME"
-    ##   ..@ assayData        :<environment: 0x14b1f20a8> 
+    ##   ..@ assayData        :<environment: 0x13ed8deb0> 
     ##   ..@ phenoData        :Formal class 'AnnotatedDataFrame' [package "Biobase"] with 4 slots
     ##   .. .. ..@ varMetadata      :'data.frame':  21 obs. of  1 variable:
     ##   .. .. .. ..$ labelDescription: chr [1:21] " Patient ID" " Date of diagnosis" " Gender of the patient" " Age of the patient at entry" ...
@@ -8165,6 +8211,7 @@ golub[1042, golubFactor == 'ALL']
 ``` r
 list(
 ALL = mean(golub[1042, golubFactor == 'ALL']),
+# ALL인 sample들의 각 gene에 대한 gene expression value의평균
 AML = mean(golub[1042, golubFactor == 'AML']))
 ```
 
@@ -8201,6 +8248,7 @@ apply(golub[, golubFactor == 'ALL'], 2, mean)
 
 # index 반환...
 cd33 = grep("CD33", golub.gnames[,2], ignore.case = TRUE)
+# ignore.case = TRUE -> 대소문자 무시
 grep("CCND3", golub.gnames[,2], ignore.case = TRUE)
 ```
 
@@ -8223,3 +8271,181 @@ golub[cd33, ]
     ## [17] -0.67921 -0.87388 -0.82569 -1.12953 -0.75991 -0.92231 -1.13505 -1.46474
     ## [25] -0.59614 -1.04821 -1.23051 -0.38605  0.50814  0.70283  1.05902  0.38602
     ## [33] -0.19413  1.10560  0.76630  0.48881 -0.13785 -0.40721
+
+# HW_1 코드 정리본
+
+``` r
+library(ISLR)
+data("NCI60")
+unique(NCI60$labs)
+```
+
+    ##  [1] "CNS"         "RENAL"       "BREAST"      "NSCLC"       "UNKNOWN"    
+    ##  [6] "OVARIAN"     "MELANOMA"    "PROSTATE"    "LEUKEMIA"    "K562B-repro"
+    ## [11] "K562A-repro" "COLON"       "MCF7A-repro" "MCF7D-repro"
+
+``` r
+dim(NCI60$data)
+```
+
+    ## [1]   64 6830
+
+``` r
+NCI60$data[1:5, 1:5]
+```
+
+    ##           1         2         3         4         5
+    ## V1 0.300000  1.180000  0.550000  1.140000 -0.265000
+    ## V2 0.679961  1.289961  0.169961  0.379961  0.464961
+    ## V3 0.940000 -0.040000 -0.170000 -0.040000 -0.605000
+    ## V4 0.280000 -0.310000  0.680000 -0.810000  0.625000
+    ## V5 0.485000 -0.465000  0.395000  0.905000  0.200000
+
+``` r
+data = NCI60$data
+labs = NCI60$labs
+```
+
+## 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
+
+``` r
+mean_data = apply(data, 1, mean)
+
+max_idx = which.max(mean_data)
+max_gene = mean_data[max_idx]
+
+min_idx = which.min(mean_data)
+min_gene = mean_data[min_idx]
+
+max_cell_name = labs[max_idx]
+min_cell_name = labs[min_idx]
+
+list(max_gene, max_cell_name, min_gene, min_cell_name)
+```
+
+    ## [[1]]
+    ##        V5 
+    ## 0.1485874 
+    ## 
+    ## [[2]]
+    ## [1] "BREAST"
+    ## 
+    ## [[3]]
+    ##        V39 
+    ## -0.1420865 
+    ## 
+    ## [[4]]
+    ## [1] "LEUKEMIA"
+
+``` r
+# unique한 관점으로 바라본다면...
+#' 먼저 apply(data, 1, mean)으로 각 행별 평균 구하고
+#' 그 다음에 각 그룹별로 묶어서 평균 계산..!
+cell_mean = tapply(apply(data, 1, mean), labs, mean)
+
+sort(cell_mean)[c(1, 14)]
+```
+
+    ##    LEUKEMIA       RENAL 
+    ## -0.07633863  0.06438121
+
+## 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including “UNKNOWN” label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1~6830)**.
+
+``` r
+gene_mean = apply(data, 2, mean)
+
+list(head(sort(gene_mean), 5),
+     tail(sort(gene_mean), 5))
+```
+
+    ## [[1]]
+    ##       5869       5868       5984       3438        281 
+    ## -0.8621881 -0.7442193 -0.7360845 -0.7223447 -0.7109384 
+    ## 
+    ## [[2]]
+    ##      6391      4700       257       256      6393 
+    ## 0.9920303 0.9985928 1.0627335 1.1137491 1.1676457
+
+## 3. Suppose that group “A” contains “BREAST” and “NSCLC”, group “B” has “MELANOMA”, “OVARIAN” and “PROSTATE”, and group “C” has “LEUKEMIA”, “RENAL” and “UNKNOWN”. The other 6 cell lines belong to group “D”. For each cancer group, compute the mean expression values and the standard deviation of **gene experssion values**.
+
+``` r
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(labs %in% A, "A",
+               ifelse(labs %in% B, "B",
+               ifelse(labs %in% C, "C", "D")))
+
+group_factor = as.factor(cell_group)
+
+tapply(apply(data, 1, mean), group_factor, mean)
+```
+
+    ##           A           B           C           D 
+    ## 0.025053741 0.040698588 0.008992817 0.005848171
+
+``` r
+# sd(data[group_factor == 'A',])
+sapply(c('A', 'B', 'C', 'D'), function(x) sd(data[group_factor == x]))
+```
+
+    ##         A         B         C         D 
+    ## 0.8006589 0.7368874 0.8443378 0.7924379
+
+## 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+
+``` r
+sd_data = apply(data, 2, function(x) tapply(x, group_factor, sd))
+table(apply(sd_data, 2, function(x) sum(x>2|x<0.2)))[-1]
+```
+
+    ## 
+    ##   1   2   3   4 
+    ## 220  71  17  14
+
+## 5. For each gene, compute the pairwise difference in mean expression values among 4 different cancer groups. Note that there are a total of 6 pairs among 4 cancer groups. Which gene and which cancer group pair have the largest difference in mean expression values? You should report the numerical value of the largest difference along with the gene ID number. Also, identify the corresponding cancer group pair that has the largest difference.
+
+- pairwise 나왔다??!?! -\> `combn`으로 죽여버리자..!
+
+`combn(x : 원소들의 벡터, m : 한 조합에 뽑을 개수, FUN : 각 조합에 적용할 함수)`
+
+``` r
+apply(data, 2, function(x) tapply(x, group_factor, mean))[1:4, 1:5]
+```
+
+    ##             1           2           3          4           5
+    ## A  0.08687378 -0.06125122  0.13281128 -0.1121887 -0.01750122
+    ## B  0.04062500  0.18750000 -0.09937500 -0.3881250  0.28000000
+    ## C -0.17499878 -0.38999875 -0.17437378 -0.9318738 -0.11312378
+    ## D -0.02875365  0.15249756  0.06124634  0.1174963 -0.04500366
+
+``` r
+group_gene_mean = apply(data, 2, function(x) tapply(x, group_factor, mean))
+```
+
+``` r
+diff = apply(group_gene_mean, 2, function(x) combn(x , 2, function(x) abs(x[1] - x[2])))
+rownames(diff)=c("A-B", "A-C", "A-D", "B-C", "B-D", "C-D")
+max(diff)
+```
+
+    ## [1] 2.915624
+
+``` r
+which(diff == max(diff), arr.ind = TRUE)
+```
+
+    ##     row  col
+    ## A-B   1 6415
+
+``` r
+#'arr.ind=TRUE 옵션은 diff가 행렬일 때
+#'(row, column) 형태의 데이터프레임(또는 행렬)로 반환하게 함
+```
+
+## 6. Only 9 different cancer cell lines have at least 2 samples. For each of these 9 cell lines, compute the pairwise distance of expression values between two samples $(i, j)$ s.t $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$ where $x_{ik}$ stands for the gene expression value of the $i$-th sample and the $k$-th gene, and $p=6,830$. Which cell line and two samples have the smallest pairwise distance? Include the nummerical value of the smallest distance with two sample ID number (1 ~ 64) and the name of the corresponding cancer cell line. Note that computation of distance between two samples is limited the same cancer cell line.
+
+``` r
+filter_cell = names(table(labs)[table(labs) >= 2])
+```

@@ -9,7 +9,7 @@ output:
 
 ### Computing on a data matrix
 
-* In bioinformatics, gene expression values (from several groups of patients) are stored as rows such that each row contains the expression values of all the patients for a particular gene and each column contains all the gene expression values for a particular person
+-   In bioinformatics, gene expression values (from several groups of patients) are stored as rows such that each row contains the expression values of all the patients for a particular gene and each column contains all the gene expression values for a particular person
 
 > 열이 각 gene이고 행이 각 sample, value는 gene expression.
 
@@ -76,14 +76,11 @@ patients.df = data.frame(
 patients.df
 ```
 
-
-
 ```{r}
 nrow(patients.df)
 ncol(patients.df)
 class(patients.df)
 ```
-
 
 ### Referencing column vectors in a data frame
 
@@ -348,7 +345,6 @@ summary(as.numeric(x2))
 hist(x2, col="orange", nclass=50, main="Scaled Expression Data")
 ```
 
-
 ### golub Data example
 
 ```{r}
@@ -358,13 +354,11 @@ data(golub)
 class(golub)
 ```
 
-
 ```{r}
 class(golub.cl)
 length(golub.cl)
 golub.cl
 ```
-
 
 ```{r}
 class(golub.gnames)
@@ -382,7 +376,6 @@ golub.gnames[1042, ]
 golub[1042, ]
 ```
 
-
 ```{r}
 golubFactor <- factor(golub.cl, levels=0:1,
                         labels = c("ALL","AML")) # 이런 식으로 factor로 치환하는게 좋다..!
@@ -393,7 +386,6 @@ golubFactor=="ALL"
 golub[1042, golubFactor == "ALL"]
 ```
 
-
 ```{r}
 # 각 sample(row)에 대한 ALL gene expression value의 mean
 meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
@@ -401,12 +393,10 @@ length(meanALL)
 summary(meanALL)
 ```
 
-
 ```{r}
 meanAML <- apply(golub[ ,golubFactor=="AML"], 1, mean)
 summary(meanAML)
 ```
-
 
 ```{r}
 par(mfrow=c(1,2))
@@ -414,12 +404,10 @@ hist(meanALL, col="orange", nclass=50, main="ALL")
 hist(meanAML, col="purple", nclass=50, main="AML")
 ```
 
-
 ```{r}
 ALL <- as.numeric(golub[ ,golubFactor=="ALL"])
 AML <- as.numeric(golub[ ,golubFactor=="AML"])
 ```
-
 
 ```{r}
 par(mfrow=c(1,2))
@@ -429,11 +417,11 @@ hist(AML, col="purple", nclass=50, main = "AML")
 
 ### `grep()`
 
-* We are interested in the properties of certain genes.
+-   We are interested in the properties of certain genes.
 
-* For instance, **gene CD33** plays an important role in distinguishing lymphoid from myeloid lineage cells.
+-   For instance, **gene CD33** plays an important role in distinguishing lymphoid from myeloid lineage cells.
 
-* To perform computations on the expressions of this gene **we need to know its row index**.
+-   To perform computations on the expressions of this gene **we need to know its row index**.
 
 > grep 함수는 지정한 문자열("CD33")이 포함된 요소를 찾기 위해 사용, 이 코드는 golub.gnames 객체의 두 번째 열에서 "CD33"이라는 문자열을 (대소문자 구분 없이) 검색하고, 그 문자열이 포함된 행의 인덱스를 반환하여 변수 cd33에 저장.
 
@@ -446,7 +434,6 @@ golub[cd33, ]
 golub.gnames[cd33, ]
 ```
 
-
 ```{r}
 ccnd3 <- grep("CCND3", golub.gnames[ ,2], ignore.case=TRUE)
 ccnd3
@@ -457,13 +444,10 @@ golub.gnames[ccnd3,]
 
 ```{r}
 not_cd33 <- grep("CD33", golub.gnames[,2], ignore.case=TRUE, invert=TRUE)
+
 ```
 
-
-> ```
-in python
-df[df['column'].str.contains("CD33", case=False)] 
-```
+<hr>
 
 # Rcode 정리본
 
@@ -679,6 +663,7 @@ golub[1042, golubFactor == 'ALL']
 
 list(
 ALL = mean(golub[1042, golubFactor == 'ALL']),
+# ALL인 sample들의 각 gene에 대한 gene expression value의평균
 AML = mean(golub[1042, golubFactor == 'AML']))
 
 #' 저 위에 놈을 모든 gene에 대해서
@@ -698,6 +683,7 @@ apply(golub[, golubFactor == 'ALL'], 2, mean)
 
 # index 반환...
 cd33 = grep("CD33", golub.gnames[,2], ignore.case = TRUE)
+# ignore.case = TRUE -> 대소문자 무시
 grep("CCND3", golub.gnames[,2], ignore.case = TRUE)
 
 golub.gnames[cd33, ]
@@ -705,9 +691,103 @@ golub[cd33, ]
 
 ```
 
+# HW_1 코드 정리본
 
+```{r}
+library(ISLR)
+data("NCI60")
+unique(NCI60$labs)
+dim(NCI60$data)
+NCI60$data[1:5, 1:5]
 
+data = NCI60$data
+labs = NCI60$labs
+```
 
+## 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
 
+```{r}
+mean_data = apply(data, 1, mean)
 
+max_idx = which.max(mean_data)
+max_gene = mean_data[max_idx]
 
+min_idx = which.min(mean_data)
+min_gene = mean_data[min_idx]
+
+max_cell_name = labs[max_idx]
+min_cell_name = labs[min_idx]
+
+list(max_gene, max_cell_name, min_gene, min_cell_name)
+
+# unique한 관점으로 바라본다면...
+#' 먼저 apply(data, 1, mean)으로 각 행별 평균 구하고
+#' 그 다음에 각 그룹별로 묶어서 평균 계산..!
+cell_mean = tapply(apply(data, 1, mean), labs, mean)
+
+sort(cell_mean)[c(1, 14)]
+```
+
+## 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1\~6830)**.
+
+```{r}
+gene_mean = apply(data, 2, mean)
+
+list(head(sort(gene_mean), 5),
+     tail(sort(gene_mean), 5))
+```
+
+## 3. Suppose that group "A" contains "BREAST" and "NSCLC", group "B" has "MELANOMA", "OVARIAN" and "PROSTATE", and group "C" has "LEUKEMIA", "RENAL" and "UNKNOWN". The other 6 cell lines belong to group "D". For each cancer group, compute the mean expression values and the standard deviation of **gene experssion values**.
+
+```{r}
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(labs %in% A, "A",
+               ifelse(labs %in% B, "B",
+               ifelse(labs %in% C, "C", "D")))
+
+group_factor = as.factor(cell_group)
+
+tapply(apply(data, 1, mean), group_factor, mean)
+
+# sd(data[group_factor == 'A',])
+sapply(c('A', 'B', 'C', 'D'), function(x) sd(data[group_factor == x]))
+
+```
+
+## 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+
+```{r}
+sd_data = apply(data, 2, function(x) tapply(x, group_factor, sd))
+table(apply(sd_data, 2, function(x) sum(x>2|x<0.2)))[-1]
+```
+
+## 5. For each gene, compute the pairwise difference in mean expression values among 4 different cancer groups. Note that there are a total of 6 pairs among 4 cancer groups. Which gene and which cancer group pair have the largest difference in mean expression values? You should report the numerical value of the largest difference along with the gene ID number. Also, identify the corresponding cancer group pair that has the largest difference.
+
+-   pairwise 나왔다??!?! -\> `combn`으로 죽여버리자..!
+
+`combn(x : 원소들의 벡터, m : 한 조합에 뽑을 개수, FUN : 각 조합에 적용할 함수)`
+
+```{r}
+apply(data, 2, function(x) tapply(x, group_factor, mean))[1:4, 1:5]
+
+group_gene_mean = apply(data, 2, function(x) tapply(x, group_factor, mean))
+```
+
+```{r}
+diff = apply(group_gene_mean, 2, function(x) combn(x , 2, function(x) abs(x[1] - x[2])))
+rownames(diff)=c("A-B", "A-C", "A-D", "B-C", "B-D", "C-D")
+max(diff)
+which(diff == max(diff), arr.ind = TRUE)
+#'arr.ind=TRUE 옵션은 diff가 행렬일 때
+#'(row, column) 형태의 데이터프레임(또는 행렬)로 반환하게 함
+```
+
+## 6. Only 9 different cancer cell lines have at least 2 samples. For each of these 9 cell lines, compute the pairwise distance of expression values between two samples $(i, j)$ s.t $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$ where $x_{ik}$ stands for the gene expression value of the $i$-th sample and the $k$-th gene, and $p=6,830$. Which cell line and two samples have the smallest pairwise distance? Include the nummerical value of the smallest distance with two sample ID number (1 \~ 64) and the name of the corresponding cancer cell line. Note that computation of distance between two samples is limited the same cancer cell line.
+
+```{r}
+filter_cell = names(table(labs)[table(labs) >= 2])
+
+```

@@ -63,7 +63,7 @@ apply(geneData ** 2, 1, mean)
 
 # lapply ------------------------------------------------------------------
 
-# 리스틑 또는 벡터의 각 요소에 함수를 적용!
+# 리스트 또는 벡터의 각 요소에 함수를 적용!
 # 결과를 리스트로 반환
 my_list = list(a = 1:5, b = 6:10)
 my_list
@@ -126,6 +126,7 @@ list(patients.df[2],
 # gl( # of group, # of element of each group)
 gl(3, 5)
 gl(2, 3, labels = c('ALL', 'AML'))
+gl(2, c(3,4) , labels = c('ALL', 'AML'))
 
 vector = c(1, 1, 0, 1, 1, 0)
 factor(vector, levels = c(1, 0), labels = c("ALL", 'AML'))
