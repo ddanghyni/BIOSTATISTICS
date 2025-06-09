@@ -257,13 +257,24 @@ t.test(golub[ccnd3, ALL], mu=0, alternative="less")
 
 ### Two Sample T-test with Unequal Variances(welch's t-test)
 
--   두 그룹의 평균을 비교할 때 사용한다.
+> 예들 들어 CCND3 gene을 이용해서 Two Sample T-test를 한다고 하자..
+>
+> 그럼 CCND3 gene에소 ALL vs AML인 그룹의 평균 gene expression을 비교할것이다.
+>
+> 만약 귀무가설이 reject되면 이 CCND3 gene은 ALL, AML를 구별하는데 도움을 주는 gene이 될 것이다..!!
+
+-   두그룹의 평균을 비교할 때 사용한다.
+
 -   Two Sample T test를 진행하기 위해선
+
     1.  각 그룹 샘플에 대한 정규성 검정 실시
-    2.  Equal variance에 대한 검정 실시
-    3.  분산이 같다면 pooled t-test를 실시
-    4.  같지 않다면 welch's t-test를 실시(general version)
-    5.  그 다음 상황에 맞는 t test를 진행한다.
+
+    > 안 따르면 비모수 검정으로 진행,, two sample t-test할려면 무조건 일단은 각 그룹이 정규성을 따라야한다.
+
+    1.  Equal variance에 대한 검정 실시
+    2.  분산이 같다면 pooled t-test를 실시
+    3.  같지 않다면 welch's t-test를 실시(general version)
+    4.  그 다음 상황에 맞는 t test를 진행한다.
 
 ```{r}
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -296,7 +307,7 @@ t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="less")
 
 -   두 집단의 분산에 대한 검정 결과로 $H_0$를 기각하지 못하면 즉, 두 집단의 분산이 같으면 **pooled sample variance**를 이용한 **pooled t-test**를 실시.
 
-#### \`t.test(data \~ groupFactor, var.equal=TRUE)
+#### `t.test(data ~ groupFactor, var.equal=TRUE)`
 
 ```{r}
 t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
@@ -305,6 +316,7 @@ t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
 ### Test for Equal Variances
 
 -   F 분포로 조지는 놈!
+-   Extremely sensitive to non-normality!
 
 ```{r}
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -646,6 +658,10 @@ odr
 fisher.test(data)
 ```
 
+![](images/clipboard-1294422529.png)
+
+![](images/clipboard-914942875.png)
+
 ### Hardy Weinberg Equilibrium
 
 -   Allele frequencies are **constant** within a popualtion over generations
@@ -659,6 +675,8 @@ fisher.test(data)
     -   Fisher's exact test
 
 -   When HWE exists, genotype freq only depend on **allele freq**.
+
+![](images/clipboard-4023286416.png)
 
 ```{r}
 # example
@@ -790,6 +808,16 @@ HWE.exact(Snp1bg)
 
 ![](images/clipboard-2220365656.png)
 
+> 저 위의 그림에서 보면
+>
+> 우리는 일단 under the H_0이므로 x ,y가 같은 분포를 지닌다는 가정을 두고 있음..
+>
+> 왜? -\> H_0가 x와 y의 평균이 같으니깐 같은 분포에서 나온다!
+>
+> 이제 x, y의 표본들을 다 묶어서 새로 랜덤하게 뽑는다...
+>
+> 그리고 뽑힌 데이터에서 TS 구하고 반복해서 under the Null에서 나올 수 있는 통계량에 대한 분포를 만들어서 p value 계산.
+
 -   resampling된 데이터의 개수는 n+m으로 기존과 같다.
 
 ```{r}
@@ -846,6 +874,8 @@ mean(abs(T) > abs(tobs))
 (sum(abs(T) > abs(tobs))+1)/(K+1) # p-value
 1/(K+1)
 ```
+
+![](images/clipboard-1423975476.png)
 
 ```{r}
 hist(T, breaks=100, col="orange", main="", xlim=c(-7, 7), xlab="Null Distribution of Test Statistic")

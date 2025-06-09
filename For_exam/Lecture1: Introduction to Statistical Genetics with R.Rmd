@@ -1,0 +1,793 @@
+---
+title: "Lecture1: Introduction to Statistical Genetics with R"
+output:
+  github_document:
+    toc: yes
+---
+
+-   2025-03-11
+
+### Computing on a data matrix
+
+-   In bioinformatics, gene expression values (from several groups of patients) are stored as rows such that each row contains the expression values of all the patients for a particular gene and each column contains all the gene expression values for a particular person
+
+> 열이 각 gene이고 행이 각 sample, value는 gene expression.
+
+```{r}
+gene1 = c(1.00, 1.50, 1.25)
+gene1
+```
+
+```{r}
+gene2 = c(1.35, 1.55, 1.00)
+gene3 = c(-1.10, -1.50, -1.25)
+gene4 = c(-1.20, -1.30, -1.00)
+genes = c(gene1, gene2, gene3, gene4)
+genes
+```
+
+```{r}
+geneData = matrix(genes, nrow=4, ncol=3, byrow=TRUE) # !byrow! -> 벡터를 행으로 박기
+geneData
+```
+
+```{r}
+rownames(geneData) = c("gene1", "gene2", "gene3", "gene4")
+colnames(geneData) = c("Eric", "Peter", "Anna")
+geneData
+# t(geneData)
+```
+
+> 여기에선 각 col이 sample이 되고 각 row는 gene name이 된다.
+
+```{r}
+# data를 받고 제일 처음 해야할 것.
+nrow(geneData) # # of gene
+ncol(geneData) # # of sample
+class(geneData)
+```
+
+```{r}
+geneData[3,] # third row (gene) data
+geneData[c(1,2), ] # first and second row(gene) data
+geneData[c("gene1", "gene2"), ] # can indexing with names
+```
+
+```{r}
+apply(geneData, 1, mean) # 1 means mean of each row(gene) == row by row
+apply(geneData, 2, mean) # 2 means mean of each column(sample) == col by col
+```
+
+### Constructing a data frame
+
+-   Matrix must have same data type init.
+-   But Data frame do not need it
+-   하나의 컬럼에서는 똑같은 tpye이 들어가야함.
+-   각 행의 열 수가 같아야함.
+-   It consists of a list of column vectors of equal length, where the data in each column must be of the same type.
+
+```{r}
+patients.df = data.frame(
+  patientID = c("101", "102", "103", "104"),
+  treatment = c("drug", "placebo", "drug", "placebo"),
+  age = c(20, 30, 24, 22) 
+)
+
+patients.df
+```
+
+```{r}
+nrow(patients.df)
+ncol(patients.df)
+class(patients.df)
+```
+
+### Referencing column vectors in a data frame
+
+```{r}
+patients.df[, 2]
+
+patients.df[[2]]
+patients.df[["treatment"]]
+patients.df$treatment # 이걸 제일 많이 사용함
+patients.df[, 2]
+```
+
+```{r}
+patients.df[c(1,3), ]
+
+patients.df$treatment=="drug"
+patients.df[patients.df$treatment=="drug", ] # [, (모든 열)]
+
+subset(patients.df, treatment=="drug")
+```
+
+```{r}
+row.names(patients.df) = patients.df$patientID
+patients.df[c("101", "103"),]
+```
+
+```{r}
+patients.df[2] # series
+patients.df[[2]] # values
+
+patients.df["treatment"]
+patients.df[["treatment"]]
+```
+
+### Constructing a list
+
+-   list는 매우 자유로움!
+
+```{r}
+list1 <- list(
+  c("p53", "p63", "p73"),
+  matrix(rnorm(10), nrow=2),
+  c(TRUE, FALSE, TRUE, FALSE, FALSE)
+)
+list1
+```
+
+```{r}
+p53FamilyGenes <- c("p53", "p63", "p73")
+list2 <- list(
+  genes = p53FamilyGenes,
+  geneExpression = matrix(rnorm(10), nrow=2),
+  remission = c(TRUE, FALSE, TRUE, FALSE, FALSE)
+)
+list2
+```
+
+```{r}
+list2[1]
+list2[[1]]
+list2[["genes"]]
+list2$genes
+```
+
+```{r}
+list2[[1]][1] <- "her2"
+list2$genes
+list2
+```
+
+```{r}
+list2[[2]]
+list2$geneExpression
+```
+
+```{r}
+list2[[3]]
+list2$remission
+```
+
+### Data path attachment
+
+```{r}
+# remission # error
+attach(list2) # 데이터 이름 생략하기 위해서..!
+remission
+
+detach(list2)
+# remission # error
+```
+
+```{r}
+genes <- c("p53", "p63", "p73")
+attach(list2)
+genes # 우선순위는 기존 객체..
+list2$genes
+```
+
+```{r}
+patients.df$treatment
+attach(patients.df)
+
+treatment
+detach(patients.df)
+```
+
+### Generating factor
+
+-   For plotting and testing of hypo we need to generate a **factor**.
+
+```{r}
+?gl
+gl(3, 5) # gl( # of group, # of element of each group) # factor
+rep(1:3, each = 5) # vector
+```
+
+-   factor type은 범주형 자료라 연산 안됨. (확인해보기)
+
+```{r}
+class(gl(3, 5))
+class(rep(1:3, each = 5))
+```
+
+```{r}
+factor(rep(1:3, each=5)) # same as gl()
+
+A <- factor(rep(1:3, each = 5))
+class(A)
+```
+
+### Functions
+
+```{r}
+set.seed(123)
+
+A <- matrix(sample(1:100, 12), nrow=3, ncol=4)
+
+A
+
+apply(A, 2, var)
+```
+
+```{r}
+fun <- function(x) {
+  sum((x-mean(x))^2)/(length(x)-1)
+}
+
+apply(A, 2, fun)
+
+apply(A, 2, function(x) sum((x-mean(x))^2)/(length(x) - 1))
+```
+
+-   case : more than one argment
+
+```{r}
+fun1 <- function(x, a) sum(x-a)^2/(length(x)-1)
+apply(A, 2, fun1, a=40)
+```
+
+```{r}
+fun2 <- function(x, a, b) sum(x - a)^2 / b
+apply(A, 2, fun2, a = 40, b = 10)
+```
+
+```{r}
+list(a=2, b=3)
+
+lapply(list(a=2, b=3), sqrt) # 각각의 원소마다 적용하라..
+
+matrix(1:6, 2, 3)
+lapply(matrix(1:6, 2, 3), function(x) x^2) # 각 원소가 함수로 들어가서 lapply이므로 output으로 list로 출력된다.
+```
+
+```{r}
+mylapply <- function(lst, fun) {
+  lst <- as.list(lst)
+  ans <- vector("list", length(lst))
+  names(ans) <- names(lst)
+  for(i in 1:length(lst))
+    ans[i] <- list(fun(lst[[i]]))
+  ans
+  }
+mylapply(list(a=2, b = 3), sqrt)
+```
+
+### Introduction to Bioconductor
+
+```{r}
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#  install.packages("BiocManager")
+#BiocManager::install()
+```
+
+```{r}
+#BiocManager::install("ALL")
+library(ALL)
+```
+
+```{r}
+data(ALL)
+#?ALL
+ALL
+str(ALL)
+```
+
+```{r}
+class(ALL)
+```
+
+```{r}
+experimentData(ALL)
+#sampleNames(ALL)
+#featureNames(ALL)
+```
+
+```{r}
+dim(exprs(ALL))
+exprs(ALL)[1:10, 1:5]
+```
+
+```{r}
+varLabels(ALL)
+ALL$sex
+ALL$age
+ALL$mol.biol
+```
+
+### ALL Data Example
+
+```{r}
+ALL$BT
+
+table(ALL$BT)
+```
+
+```{r}
+#' ALL$BT에서 T0_4까지를 BT로 변환을 위한 작업
+#' 다음 코드를 실행하면 T/F의 Logical vector가 생성된다.
+BT <- ALL$BT %in% c("T", "T1", "T2", "T3", "T4")
+
+#' as.numeric(BT)를 해서 T/F 값을 0, 1로 변환
+#' 그 다음 label을 설정해서 0 -> B 1 -> T로 factor 변환
+y <- factor(as.numeric(BT), labels=c("B", "T")) # logical로 처리
+table(y)
+```
+
+```{r}
+x <- t(exprs(ALL))
+dim(x)
+
+summary(as.numeric(x)) # 이거 체크 vs summary(x)
+
+hist(x, col="orange", nclass=50, main="Expression Data")
+```
+
+-   scaling 할 때 행은 sample 열은 variable로 설정하기!!!!!!!
+
+```{r}
+x2 <- scale(x)
+dim(x2)
+summary(as.numeric(x2))
+hist(x2, col="orange", nclass=50, main="Scaled Expression Data")
+```
+
+### golub Data example
+
+```{r}
+#BiocManager::install("multtest")
+library(multtest)
+data(golub)
+class(golub)
+```
+
+```{r}
+class(golub.cl)
+length(golub.cl)
+golub.cl
+```
+
+```{r}
+class(golub.gnames)
+dim(golub.gnames)
+head(golub.gnames)
+```
+
+```{r}
+dim(golub)
+golub[1:10, 1:5] # row -> samples , col = genes
+```
+
+```{r}
+golub.gnames[1042, ]
+golub[1042, ]
+```
+
+```{r}
+golubFactor <- factor(golub.cl, levels=0:1,
+                        labels = c("ALL","AML")) # 이런 식으로 factor로 치환하는게 좋다..!
+golubFactor
+table(golubFactor)
+
+golubFactor=="ALL" 
+golub[1042, golubFactor == "ALL"]
+```
+
+```{r}
+# 각 sample(row)에 대한 ALL gene expression value의 mean
+meanALL <- apply(golub[ ,golubFactor=="ALL"], 1, mean)
+length(meanALL)
+summary(meanALL)
+```
+
+```{r}
+meanAML <- apply(golub[ ,golubFactor=="AML"], 1, mean)
+summary(meanAML)
+```
+
+```{r}
+par(mfrow=c(1,2))
+hist(meanALL, col="orange", nclass=50, main="ALL")
+hist(meanAML, col="purple", nclass=50, main="AML")
+```
+
+```{r}
+ALL <- as.numeric(golub[ ,golubFactor=="ALL"])
+AML <- as.numeric(golub[ ,golubFactor=="AML"])
+```
+
+```{r}
+par(mfrow=c(1,2))
+hist(ALL, col="orange", nclass=50, main="ALL")
+hist(AML, col="purple", nclass=50, main = "AML")
+```
+
+### `grep()`
+
+-   We are interested in the properties of certain genes.
+
+-   For instance, **gene CD33** plays an important role in distinguishing lymphoid from myeloid lineage cells.
+
+-   To perform computations on the expressions of this gene **we need to know its row index**.
+
+> grep 함수는 지정한 문자열("CD33")이 포함된 요소를 찾기 위해 사용, 이 코드는 golub.gnames 객체의 두 번째 열에서 "CD33"이라는 문자열을 (대소문자 구분 없이) 검색하고, 그 문자열이 포함된 행의 인덱스를 반환하여 변수 cd33에 저장.
+
+```{r}
+#' grep function
+#' ignore.case: TRUE로 설정하면 대소문자 구분 없이 검색
+cd33 <- grep("CD33", golub.gnames[ ,2], ignore.case=TRUE)
+cd33
+golub[cd33, ]
+golub.gnames[cd33, ]
+```
+
+```{r}
+ccnd3 <- grep("CCND3", golub.gnames[ ,2], ignore.case=TRUE)
+ccnd3
+golub.gnames[ccnd3,]
+```
+
+> 즉 조건을 만족하지 않는 행의 인덱스를 찾고 싶다면, grep 함수의 invert 옵션을 사용
+
+```{r}
+not_cd33 <- grep("CD33", golub.gnames[,2], ignore.case=TRUE, invert=TRUE)
+
+```
+
+<hr>
+
+# Rcode 정리본
+
+```{r}
+
+# Computing on a data matrix ----------------------------------------------
+
+gene1 = c(1.00, 1.50, 1.25)
+gene1
+
+gene2 = c(1.35, 1.55, 1.00)
+gene3 = c(-1.10, -1.50, -1.25)
+gene4 = c(-1.20, -1.30, -1.00)
+
+# 한 줄로 다들어 간다..!
+genes = c(gene1, gene2, gene3, gene4)
+genes
+
+# byrow = TRUE -> 데이터가 row 방향으로 쑥쑥 들어간다.
+# gene을 행으로 만들고 sample을 col로 만들고 싶어!
+geneData = matrix(genes, nrow = 4, ncol = 3, byrow = TRUE)
+geneData
+
+
+# gene을 열로 sample을 Col로
+testData_ = matrix(genes, nrow = 3, ncol = 4)
+testData_
+t(geneData)
+
+# 이상하쥬..?
+testData = matrix(genes, nrow = 4, ncol = 3, byrow = FALSE)
+testData
+
+rownames(geneData) = c("gene1", "gene2", "gene3", "gene4")
+colnames(geneData) = c("Eric", "Peter", "Anna")
+geneData
+
+class(geneData)
+
+
+# indexing matrix ---------------------------------------------------------
+
+geneData[3,]
+geneData[c(1, 2), ]
+
+# 이름으로도 indexing이 가능하다..!
+geneData[c('gene1', 'gene2'),]
+
+#' 행 열을 가진 데이터에서 단순 정수로 indexing을하면
+#' row 방향 즉 위에서 아래로 내려가면서 순서대로
+#' 4행 3열짜리 행렬을 백터처럼 다뤄서, 5번째 원소를 pick!
+geneData[5]
+
+
+# apply -------------------------------------------------------------------
+
+apply(geneData, 1, mean) # 각 행을 가지고 놀자!
+apply(geneData, 2, mean) # 각 열을 가지고 놀자!
+
+#' 이게 R에서는 Matrix로 반환할때
+#' 열로 쌓이게 되어있음 ㅇㅇ
+apply(geneData, 1, function(x) x ** 2)
+
+apply(apply(geneData, 1, function(x) x ** 2), 2, mean)
+apply(geneData ** 2, 1, mean)
+
+
+# lapply ------------------------------------------------------------------
+
+# 리스틑 또는 벡터의 각 요소에 함수를 적용!
+# 결과를 리스트로 반환
+my_list = list(a = 1:5, b = 6:10)
+my_list
+
+#apply(my_list, 2, mean)-> error!
+
+lapply(my_list, mean)
+
+# my_list ** 2 -> error!
+lapply(my_list, function(x) x ** 2)
+lapply(lapply(my_list, function(x) x ** 2), mean)
+
+# sapply ------------------------------------------------------------------
+
+#lapply와 동일하지만 결과가 리스트가 아니라 벡터/행렬로 나옴
+
+sapply(my_list, mean)
+sapply(sapply(my_list, function(x) x ** 2, simplify = FALSE), mean)
+
+# tapply ------------------------------------------------------------------
+
+# 벡터의 값을 그룹 별로 나눠서 함수 적용
+scores <- c(80, 90, 70, 95, 88, 92)
+group <- factor(c("A", "A", "B", "B", "C", "C"))
+tapply(scores, group, mean)
+
+
+
+# ++ aggregate ------------------------------------------------------------
+
+geneData
+geneType = factor(c("ALL",'ALL', 'AML', 'AML'))
+df = data.frame(geneData, geneType)
+aggregate(geneData ~ geneType, data = df, mean)
+
+
+# df indexing -------------------------------------------------------------
+
+patients.df = data.frame(
+  patientID = c("101", "102", "103", "104"),
+  treatment = c("drug", "placebo", "drug", "placebo"),
+  age = c(20, 30, 24, 22) 
+)
+
+patients.df
+
+patients.df[patients.df$treatment == "drug", ]
+
+# 행렬에선 rownames지만 df에선 row.names
+row.names(patients.df) = patients.df$patientID
+
+# 하나의 정수만 넣으면 해당 열!!!을 뽑는다.
+list(patients.df[2],
+      patients.df[[2]])
+
+
+
+# Generating factor -------------------------------------------------------
+
+# gl( # of group, # of element of each group)
+gl(3, 5)
+gl(2, 3, labels = c('ALL', 'AML'))
+
+vector = c(1, 1, 0, 1, 1, 0)
+factor(vector, levels = c(1, 0), labels = c("ALL", 'AML'))
+factor(vector, levels = c(0, 1), labels = c("ALL", 'AML'))
+
+
+# Functions ---------------------------------------------------------------
+
+set.seed(123)
+
+A = matrix(sample(1:100, 12), nrow = 3, ncol = 4)
+A
+
+apply(A, 2, function(x) sum((x - mean(x))^2) / (length(x) - 1))  
+
+# 추가적인 arguments를 넣고 싶을 때
+fun1 = function(x, a) sum(x - a)^2/ (length(x) - 1)
+apply(A, 2, fun1, a = 40)
+
+data = matrix(1:6, 2, 3)
+data
+
+lapply(data, function(x) x^2) # 굳이..?
+
+
+
+# ALL data ----------------------------------------------------------------
+
+library(ALL)
+data(ALL)
+str(ALL)
+
+sampleNames(ALL) # 환자 이름
+featureNames(ALL) # 각 환자가 가지고 있는 gene이름
+
+ALL$BT
+table(ALL$BT)
+
+BT = ALL$BT %in% c('T', 'T1', 'T2', 'T3', 'T4')
+as.numeric(BT)
+y = factor(as.numeric(BT), levels = c(0, 1), labels = c('B', 'T'))
+#factor(as.numeric(BT), labels = c('B', 'T'))
+table(y)
+
+
+# golub data --------------------------------------------------------------
+
+library(multtest)
+
+data(golub)
+
+#'각 sample의 tumor class -> ALL, AML에 대한 정보
+#' ALL -> 0, AML -> 1
+#' 나중에 당연히 Factor로 변환해야겠지?
+golub.cl
+
+#' gene name 보관
+#' gene index, ID, Name
+dim(golub.gnames)
+golub.gnames[1:10,]
+
+#' gene expression이 담긴 데이터
+#' 행이 Gene 열이 Sample
+dim(golub)
+t(golub)[1:5, 1:10]
+
+
+# M92287_at ---------------------------------------------------------------
+
+golub.gnames[1042, ]
+
+# 각 sample의 CCND3 gene에 대한 gene expression
+golub[1042, ]
+
+# ALL, AML Factor화
+golubFactor = factor(golub.cl, levels = c(0, 1), labels = c("ALL", "AML"))
+golubFactor == 'ALL'
+
+#'1042번째 gene(CCND3)에서 이제 암 상태가 ALL인 sample만 뽑!
+golub[1042, golubFactor == 'ALL'] 
+
+list(
+ALL = mean(golub[1042, golubFactor == 'ALL']),
+# ALL인 sample들의 각 gene에 대한 gene expression value의평균
+AML = mean(golub[1042, golubFactor == 'AML']))
+
+#' 저 위에 놈을 모든 gene에 대해서
+#' 각 gene 별 ALL과 AML의 평균
+meanALL = apply(golub[, golubFactor == 'ALL'], 1, mean)
+meanAML = apply(golub[, golubFactor == 'AML'], 1, mean)
+
+# 각 sample 별
+apply(golub[, golubFactor == 'ALL'], 2, mean)
+
+############################################
+# 데이터 구조를 잘 파악하는게 일단 중요!!! #
+############################################
+
+
+# grep --------------------------------------------------------------------
+
+# index 반환...
+cd33 = grep("CD33", golub.gnames[,2], ignore.case = TRUE)
+# ignore.case = TRUE -> 대소문자 무시
+grep("CCND3", golub.gnames[,2], ignore.case = TRUE)
+
+golub.gnames[cd33, ]
+golub[cd33, ]
+
+```
+
+# HW_1 코드 정리본
+
+```{r}
+library(ISLR)
+data("NCI60")
+unique(NCI60$labs)
+dim(NCI60$data)
+NCI60$data[1:5, 1:5]
+
+data = NCI60$data
+labs = NCI60$labs
+```
+
+#### 1. For each **cancer cell line**, compute average gene expression values. Identify **two cell lines** that have the largest and the smallest mean values. Also, include the maximun and minimum mean values.
+
+```{r}
+mean_data = apply(data, 1, mean)
+
+max_idx = which.max(mean_data)
+max_gene = mean_data[max_idx]
+
+min_idx = which.min(mean_data)
+min_gene = mean_data[min_idx]
+
+max_cell_name = labs[max_idx]
+min_cell_name = labs[min_idx]
+
+list(max_gene, max_cell_name, min_gene, min_cell_name)
+
+# unique한 관점으로 바라본다면...
+#' 먼저 apply(data, 1, mean)으로 각 행별 평균 구하고
+#' 그 다음에 각 그룹별로 묶어서 평균 계산..!
+cell_mean = tapply(apply(data, 1, mean), labs, mean)
+
+sort(cell_mean)[c(1, 14)]
+```
+
+#### 2. For each **gene**, compute average gene expression values of 64 cancer cell lines, including "UNKNOWN" label. Identify **top 5 gene** that have the **largest mean expression values** and top 5 genes that have **smallest mean expression values**. Also, include their mean values with **gene ID number(1\~6830)**.
+
+```{r}
+gene_mean = apply(data, 2, mean)
+
+list(head(sort(gene_mean), 5),
+     tail(sort(gene_mean), 5))
+```
+
+#### 3. Suppose that group "A" contains "BREAST" and "NSCLC", group "B" has "MELANOMA", "OVARIAN" and "PROSTATE", and group "C" has "LEUKEMIA", "RENAL" and "UNKNOWN". The other 6 cell lines belong to group "D". For each cancer group, compute the mean expression values and the standard deviation of **gene experssion values**.
+
+```{r}
+A = c("BREAST","NSCLC")
+B = c("MELANOMA", "OVARIAN", "PROSTATE")
+C = c("LEUKEMIA", "RENAL", "UNKNOWN")
+
+cell_group = ifelse(labs %in% A, "A",
+               ifelse(labs %in% B, "B",
+               ifelse(labs %in% C, "C", "D")))
+
+group_factor = as.factor(cell_group)
+
+tapply(apply(data, 1, mean), group_factor, mean)
+
+# sd(data[group_factor == 'A',])
+sapply(c('A', 'B', 'C', 'D'), function(x) sd(data[group_factor == x]))
+
+```
+
+#### 4. For each cancer group defined in Q3, compute the sample SD of gene expression values of individual genes. Find genes whose SD is less than 0.2 or greater than 2 for each cancer group, i.e., $SD < 0.2$ or $SD > 2$. How many genes are overlapped by 4 different cancer groups? How many genes are overlapped by exactly 3 different cancer groups? or exactly 2 different cancer groups? Also, how many genes are uniquely identified by only one cancer group? Summarize your answer, using the following table.
+
+```{r}
+sd_data = apply(data, 2, function(x) tapply(x, group_factor, sd))
+table(apply(sd_data, 2, function(x) sum(x>2|x<0.2)))[-1]
+```
+
+#### 5. For each gene, compute the pairwise difference in mean expression values among 4 different cancer groups. Note that there are a total of 6 pairs among 4 cancer groups. Which gene and which cancer group pair have the largest difference in mean expression values? You should report the numerical value of the largest difference along with the gene ID number. Also, identify the corresponding cancer group pair that has the largest difference.
+
+-   pairwise 나왔다??!?! -\> `combn`으로 죽여버리자..!
+
+`combn(x : 원소들의 벡터, m : 한 조합에 뽑을 개수, FUN : 각 조합에 적용할 함수)`
+
+```{r}
+apply(data, 2, function(x) tapply(x, group_factor, mean))[1:4, 1:5]
+
+group_gene_mean = apply(data, 2, function(x) tapply(x, group_factor, mean))
+```
+
+```{r}
+diff = apply(group_gene_mean, 2, function(x) combn(x , 2, function(x) abs(x[1] - x[2])))
+rownames(diff)=c("A-B", "A-C", "A-D", "B-C", "B-D", "C-D")
+max(diff)
+which(diff == max(diff), arr.ind = TRUE)
+#'arr.ind=TRUE 옵션은 diff가 행렬일 때
+#'(row, column) 형태의 데이터프레임(또는 행렬)로 반환하게 함
+```
+
+#### 6. Only 9 different cancer cell lines have at least 2 samples. For each of these 9 cell lines, compute the pairwise distance of expression values between two samples $(i, j)$ s.t $$ dist(i, j)= \sqrt{\sum_{k=1}^{p} \bigl(x_{ik} - x_{jk}\bigr)^2}$$ where $x_{ik}$ stands for the gene expression value of the $i$-th sample and the $k$-th gene, and $p=6,830$. Which cell line and two samples have the smallest pairwise distance? Include the nummerical value of the smallest distance with two sample ID number (1 \~ 64) and the name of the corresponding cancer cell line. Note that computation of distance between two samples is limited the same cancer cell line.
+
+```{r}
+filter_cell = names(table(labs)[table(labs) >= 2])
+
+```
