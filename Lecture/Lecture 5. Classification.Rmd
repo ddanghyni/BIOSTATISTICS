@@ -8,6 +8,14 @@ output:
     latex_engine: xelatex  
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo    = TRUE     # 코드만 보이게 하고 싶다면 TRUE/ FALSE 조정
+)
+```
+
 ```{r}
 #if (!requireNamespace("BiocManager", quietly = TRUE))
 #install.packages("BiocManager")
@@ -301,7 +309,7 @@ summary(g)
 predict(g) # value of linear predictors,  # η = logit(π̂)
 ```
 
-![](images/스크린샷 2025-06-13 14.31.38.png)
+![](images/스크린샷%202025-06-13%2014.31.38.png)
 
 ![](images/clipboard-2347516603.png)
 
@@ -382,3 +390,88 @@ performance(pred, "auc")@y.values
 ```
 
 ## Training Sets and Test Sets
+
+![](images/스크린샷%202025-06-13%2015.30.40.png)
+
+### Example of Test Errors
+
+```{r}
+set.seed(1234)
+
+train = sample(1:ncol(golub), 19) # train data로 19개 샘플을 쓰겠다!
+
+test = setdiff(1:ncol(golub), train)
+```
+
+```{r}
+Data = data.frame(x = golub[ccnd3, ], y = Factor)
+head(Data); tail(Data)
+```
+
+```{r}
+g = glm(y ~ x, data = Data, family = 'binomial', subset = train)
+p = predict(g, Data, type = "response")
+```
+
+`predict(~, Data,)` : Data 넣는 이유
+
+-   **Train 데이터만 평가**할 거면 생략해도 OK.
+
+-   **Test 데이터까지 포함하거나, 모델 학습에 쓰지 않은 새 표본**을 예측하려면 **반드시 `Data` (또는 `newdata = ...`)를 명시**해야 한다.
+
+```{r}
+# p => AML일 확률
+pred.train = p[train] > 0.5 # 0.5 보다 크면 AML(TRUE) , 작으면 ALL(FALSE)
+pred.test = p[test] > 0.5
+```
+
+```{r}
+t1 = table(pred.train, Factor[train])
+t1
+```
+
+```{r}
+1 - sum(diag(t1)) / sum(t1) # training error
+```
+
+```{r}
+t2 = table(pred.test, Factor[test])
+1 - sum(diag(t2)) / sum(t2) # test error
+```
+
+```{r}
+set.seed(12345)
+
+K = 100
+
+miss = matrix(0 , K, 2)
+
+colnames(miss) = c("training", "test")
+
+Data = data.frame(x = golub[ccnd3, ], y = Factor)
+
+for(k in 1:K){
+  
+  # split test train
+  train = sample(1:ncol(golub), 19)
+  test = setdiff(1:ncol(golub), train)
+  
+  # make model
+  g = glm(y ~ x, data = Data , family = binomial, subset = train)
+  
+  # est probs
+  p = predict(g, Data, type = "response")
+  pred.train = p[train] > 0.5
+  pred.test = p[test] > 0.5
+  
+  t1 = table(pred.train, Factor[train])
+  t2 = table(pred.test, Factor[test])
+  
+  miss[k, 1] = 1 - sum(diag(t1)) / sum(t1)
+  miss[k, 2] = 1 - sum(diag(t2)) / sum(t2)
+}
+
+apply(miss , 2, summary)
+```
+
+## Classification Trees
