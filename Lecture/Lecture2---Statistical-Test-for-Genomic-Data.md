@@ -22,6 +22,7 @@ Lecture2 : Statistical Test for Genomic Data
 - [Asthma SNP Data](#asthma-snp-data)
 - [Permutation Test](#permutation-test)
 - [Confidence Interval](#confidence-interval-1)
+- [Duality between CI and test](#duality-between-ci-and-test)
 - [Bootstrap Confidence Interval](#bootstrap-confidence-interval)
 - [Wilcoxon Signed Rank Test](#wilcoxon-signed-rank-test)
 - [Wilcoxon Rank Sum Test](#wilcoxon-rank-sum-test)
@@ -362,8 +363,8 @@ qnorm(0.5, mean = 0, sd = 1)
 rnorm(10, mean = 0, sd = 1)
 ```
 
-    ##  [1]  1.2211731 -0.3472018 -1.2001554  1.8387957  0.4101926  0.1039657
-    ##  [7] -1.9480056 -1.4061762 -0.7968516 -1.0950681
+    ##  [1] -0.43145370 -0.53457612 -1.74880939  0.92186801  0.76043769 -0.43568294
+    ##  [7]  2.37831055  0.04514786 -0.54860113 -0.55768308
 
 ``` r
 x <- golub[2058, golubFactor=="ALL"]
@@ -592,13 +593,27 @@ t.test(golub[ccnd3, ALL], mu=0, alternative="less")
 
 ### Two Sample T-test with Unequal Variances(welch’s t-test)
 
-- 두 그룹의 평균을 비교할 때 사용한다.
+> 예들 들어 CCND3 gene을 이용해서 Two Sample T-test를 한다고 하자..
+>
+> 그럼 CCND3 gene에소 ALL vs AML인 그룹의 평균 gene expression을
+> 비교할것이다.
+>
+> 만약 귀무가설이 reject되면 이 CCND3 gene은 ALL, AML를 구별하는데
+> 도움을 주는 gene이 될 것이다..!!
+
+- 두그룹의 평균을 비교할 때 사용한다.
+
 - Two Sample T test를 진행하기 위해선
+
   1.  각 그룹 샘플에 대한 정규성 검정 실시
-  2.  Equal variance에 대한 검정 실시
-  3.  분산이 같다면 pooled t-test를 실시
-  4.  같지 않다면 welch’s t-test를 실시(general version)
-  5.  그 다음 상황에 맞는 t test를 진행한다.
+
+  > 안 따르면 비모수 검정으로 진행,, two sample t-test할려면 무조건
+  > 일단은 각 그룹이 정규성을 따라야한다.
+
+  1.  Equal variance에 대한 검정 실시
+  2.  분산이 같다면 pooled t-test를 실시
+  3.  같지 않다면 welch’s t-test를 실시(general version)
+  4.  그 다음 상황에 맞는 t test를 진행한다.
 
 ``` r
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -719,7 +734,7 @@ t.test(golub[ccnd3,] ~ golubFactor, var.equal=FALSE, alternative="less")
   집단의 분산이 같으면 **pooled sample variance**를 이용한 **pooled
   t-test**를 실시.
 
-#### \`t.test(data ~ groupFactor, var.equal=TRUE)
+#### `t.test(data ~ groupFactor, var.equal=TRUE)`
 
 ``` r
 t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
@@ -740,6 +755,7 @@ t.test(golub[ccnd3,] ~ golubFactor, var.equal=TRUE)
 ### Test for Equal Variances
 
 - F 분포로 조지는 놈!
+- Extremely sensitive to non-normality!
 
 ``` r
 ccnd3 <- grep("CCND3", golub.gnames[,2], ignore.case=TRUE) 
@@ -1550,6 +1566,10 @@ fisher.test(data)
     ## odds ratio 
     ##   1.399977
 
+![](images/clipboard-1294422529.png)
+
+![](images/clipboard-914942875.png)
+
 ### Hardy Weinberg Equilibrium
 
 - Allele frequencies are **constant** within a popualtion over
@@ -1565,6 +1585,8 @@ fisher.test(data)
 
 - When HWE exists, genotype freq only depend on **allele freq**.
 
+![](images/clipboard-4023286416.png)
+
 ``` r
 # example
 set.seed(202211545)
@@ -1575,7 +1597,6 @@ Geno <- apply(matrix(C, ncol=2), 1, sum)
 
 #' Geno denotes the number of major alleles. No major alleles are coded as 0, only 1 major allele as 1 and 2 as 2
 #' Minor allele freq(MAF) is F
-
 
 #' Estimate MAF - > P_a => minor allele freq, P_A => major allele freq
 #' a가 몇개 나왔는지 알아야함 -> table()로 알 수 있겠지?
@@ -1646,6 +1667,50 @@ chisq.test(table(Geno), p = pi)
     ## 
     ## data:  table(Geno)
     ## X-squared = 1.4844, df = 2, p-value = 0.4761
+
+``` r
+table(Geno)
+```
+
+    ## Geno
+    ##    0    1    2 
+    ##  648 3839 5513
+
+``` r
+##############################################################################################
+
+library(genetics)
+
+# Geno 벡터를 유전자형 형태로 바꿔주기
+# 0 = aa, 1 = Aa, 2 = AA
+geno_vec = rep(NA, length(Geno))
+geno_vec[Geno == 0] = "aa"
+geno_vec[Geno == 1] = "Aa"
+geno_vec[Geno == 2] = "AA"
+
+geno_factor = genotype(geno_vec, sep = "")
+
+# Fisher's exact HWE test (genetics 패키지)
+HWE.exact(geno_factor)
+```
+
+    ## 
+    ##  Exact Test for Hardy-Weinberg Equilibrium
+    ## 
+    ## data:  geno_factor
+    ## N11 = 5513, N12 = 3839, N22 = 648, N1 = 14865, N2 = 5135, p-value =
+    ## 0.5644
+
+``` r
+HWE.chisq(geno_factor)
+```
+
+    ## 
+    ##  Pearson's Chi-squared test with simulated p-value (based on 10000
+    ##  replicates)
+    ## 
+    ## data:  tab
+    ## X-squared = 0.34481, df = NA, p-value = 0.5529
 
 ### Asthma SNP Data
 
@@ -2064,7 +2129,7 @@ HWE.chisq(Snp1)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 0.31202, df = NA, p-value = 0.612
+    ## X-squared = 0.31202, df = NA, p-value = 0.5998
 
 ``` r
 country <- asthma$country 
@@ -2109,7 +2174,7 @@ HWE.chisq(Snp1bg)
     ##  replicates)
     ## 
     ## data:  tab
-    ## X-squared = 1.6915, df = NA, p-value = 0.07649
+    ## X-squared = 1.6915, df = NA, p-value = 0.07109
 
 ``` r
 HWE.exact(Snp1bg)
@@ -2122,6 +2187,8 @@ HWE.exact(Snp1bg)
     ## N11 = 4, N12 = 9, N22 = 1, N1 = 17, N2 = 11, p-value = 0.3198
 
 ### Permutation Test
+
+> Two sample t test를 못 쓸때 대안!
 
 - Permutation tests is a **resampling based test**.
 
@@ -2145,6 +2212,18 @@ HWE.exact(Snp1bg)
 ![](images/clipboard-3422663244.png)
 
 ![](images/clipboard-2220365656.png)
+
+> 저 위의 그림에서 보면
+>
+> 우리는 일단 under the H_0이므로 x ,y가 같은 분포를 지닌다는 가정을
+> 두고 있음..
+>
+> 왜? -\> H_0가 x와 y의 평균이 같으니깐 같은 분포에서 나온다!
+>
+> 이제 x, y의 표본들을 다 묶어서 새로 랜덤하게 뽑는다…
+>
+> 그리고 뽑힌 데이터에서 TS 구하고 반복해서 under the Null에서 나올 수
+> 있는 통계량에 대한 분포를 만들어서 p value 계산.
 
 - resampling된 데이터의 개수는 n+m으로 기존과 같다.
 
@@ -2372,6 +2451,8 @@ mean(abs(T) > abs(tobs))
 
     ## [1] 9.999e-05
 
+![](images/clipboard-1423975476.png)
+
 ``` r
 hist(T, breaks=100, col="orange", main="", xlim=c(-7, 7), xlab="Null Distribution of Test Statistic")
 x0 <- seq(-7, 7, len=1000) 
@@ -2414,7 +2495,7 @@ text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
   population**.
 
 ``` r
-t.test(golub[ccnd3,]) 
+t.test(golub[ccnd3,]) # default mu=0
 ```
 
     ## 
@@ -2430,6 +2511,7 @@ t.test(golub[ccnd3,])
     ##   1.52964
 
 ``` r
+# pv 존나 작다-> H_0기각 -> mu가 신뢰구간에 당연히 포함 x
 t.test(golub[ccnd3,])$conf.int
 ```
 
@@ -2469,9 +2551,16 @@ t.test(golub[ccnd3,], mu=1.741)$p.val
 
     ## [1] 0.09960262
 
+### Duality between CI and test
+
+![](images/clipboard-596619209.png)
+
 ### Bootstrap Confidence Interval
 
 - 정규성을 따르지 않을 때! t 분포 이용 못하니깐! Bootstrap 쓰자!
+
+> One sample t test에선 이중성때문에 CI만 알아도 기각할지말지 알 수
+> 있다.
 
 ![](images/clipboard-2757766098.png)
 

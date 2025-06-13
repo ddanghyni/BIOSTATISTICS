@@ -1,11 +1,10 @@
 ---
-title: "Lecture2 : Statistical Test for Genomic Data"
-date: "2025-03-13"
+title: "Lecture 2 — Statistical Test for Genomic Data"
 mainfont: NanumGothic
-output:
-  pdf_document:
-    latex_engine: xelatex      
+output: html_document
 ---
+
+### Required Packages
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -14,8 +13,6 @@ knitr::opts_chunk$set(
   echo    = TRUE     # 코드만 보이게 하고 싶다면 TRUE/ FALSE 조정
 )
 ```
-
-### Required Packages
 
 ```{r}
 #if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -437,8 +434,11 @@ library(outliers)
 grubbs.test(golub[ccnd3, golubFactor == 'ALL'])
 grubbs.test(golub[ccnd3, golubFactor == 'AML'])
 
-grubbs.test(golub[zyxin, golubFactor == 'ALL']) # 이상치가 없다!!
+grubbs.test(golub[zyxin, golubFactor == 'ALL']) # 이상치가 아니다!!
 grubbs.test(golub[zyxin, golubFactor == 'AML'])
+
+
+golub[ccnd3, golubFactor == 'ALL']
 ```
 
 -   이상값이 있거나 분포가 크게 왜곡된 경우, 순위 기반(비모수) 검정, 강건추정(robust estimation) 기법 등이 대안
@@ -455,7 +455,7 @@ H_0 : p = 0.7
 $$
 
 $$
-H_1 : p >= 0.7
+H_1 : p > 0.7
 $$
 
 > 그럼 p-value는 다음과 같이 계산된다.
@@ -527,12 +527,12 @@ obs
 
 ```{r}
 e <- rep(sum(obs)/4, 4) # n(전체 수) * 1/4 (p_i)
-e # 기대도수!
+e
 ```
 
 ```{r}
 test <- sum((obs-e)^2/e) 
-test # chi-sq test statistics
+test
 ```
 
 ```{r}
@@ -542,8 +542,6 @@ qchisq(0.95, 3)
 
 ```{r}
 chisq.test(obs)
-# observed count를 넣으면 됨!! table 자료
-# pi를 넣지 않으면 default가 모든 그룹의 확률이 같다!
 ```
 
 ```{r}
@@ -627,7 +625,6 @@ chisq.test(table(pred, golubFactor))
 ```
 
 ```{r}
-# 모든 각 express 값을 cutoff로 해보자!
 cutoff <- sort(x) 
 pval <- 0
 ```
@@ -678,8 +675,6 @@ boxplot(x2 ~ golubFactor, cex.lab=1.5, main=NULL, xlab="Leukemia subtype",
         col=c("lightblue", "orange")) 
 abline(h=cutoff[pval2 < 0.05], lty=2, col="gray")
 ```
-
-> 독립성 검정으로 해당 gene이 ALL, AML 나누는데 중요한 gene인지 아닌지도 testing 가능하다.
 
 ### Fisher’s Exact Test
 
@@ -800,8 +795,8 @@ data(asthma, package = "SNPassoc")
 
 ```{r}
 dim(asthma) 
-#str(asthma) 
-#lapply(asthma[,-c(1:6)], table)
+str(asthma) 
+lapply(asthma[,-c(1:6)], table)
 ```
 
 ```{r}
@@ -984,7 +979,7 @@ t.test(golub[ccnd3,], mu=1.741)$p.val
 
 ### Duality between CI and test
 
-![](images/clipboard-596619209.png)
+![](images/clipboard-2029181380.png)
 
 ### Bootstrap Confidence Interval
 
@@ -992,7 +987,7 @@ t.test(golub[ccnd3,], mu=1.741)$p.val
 
 > One sample t test에선 이중성때문에 CI만 알아도 기각할지말지 알 수 있다.
 
-![](images/clipboard-2757766098.png)
+![](images/clipboard-433652742.png)
 
 > Bootstrap으로 만든 분포는 정확히 말하면
 >

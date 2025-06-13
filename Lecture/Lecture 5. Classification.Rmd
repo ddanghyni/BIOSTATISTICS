@@ -1,0 +1,384 @@
+---
+title: "06. Classification Methods"
+author: "KIM SANG HYUN(202211545)"
+date: "2025-06-13"
+mainfont: NanumGothic
+output:
+  pdf_document:
+    latex_engine: xelatex  
+---
+
+```{r}
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#install.packages("BiocManager")
+#BiocManager::install("multtest")
+#BiocManager::install("ALL")
+#BiocManager::install("hgu95av2.db")
+#install.packages("ROCR")
+#install.packages("rpart")
+#install.packages("rpart.plot")
+#install.packages("randomForest")
+#install.packages("e1071")
+```
+
+```{r}
+library(multtest)
+library(ALL)
+library(hgu95av2.db)
+library(ROCR)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(e1071)
+```
+
+## Introduction
+
+-   In, bioinformatics, an importanr question is whether or not the diagnosis of a patient can be predicted by gene expression.
+
+-   A related question is which of the thousands of genes play on important role in the prediction of class membership.
+
+-   These important genes are often called biomarkers.
+
+-   To evaluate the quality of any predictions, the fundamental concepts of **sensitivity** and **specificity** are frequently used.
+
+-   The prediction performance can be summarized in a single number by the **AUC** (ROC curve).
+
+## Classification of micro RNA
+
+-   Based on gene expression measurements, we need to classify microRNA vs non-microRNA.
+
+-   지금 여기에선 permutation p-values를 classifer로 이용한다.
+
+> 일단 내가 이해한 바로는 microRNA 3424에서 rkr microRNA를 1000번 섞어서 순열 pvalue 계산을 진행. 그럼 총 3424개의 p value가 나오고 이걸 non microRNA도 동일하게 해서 총 6848개의 p value를 구해서 0.01이라는 classifier로 분류 진행. -\> 근데 교수님이 일단은 그냥 결과 해석에 초점을 맞추라고 하심.
+
+![](images/clipboard-1010595523.png)
+
+## Assessment of the Performance of Classifiers
+
+-   The ROC curve is a popular graphic for sum displaying the two types of errors for all possible thresholds.
+
+-   The overall performance of a classifier, summarized over all possible thresholds, is given by AUC.
+
+![](images/clipboard-4185966634.png)
+
+## ROC curve
+
+-   We have observed that the expression values of the gene CCND3 tend to be greater for ALL patients.
+
+-   We may us CCND3 expression data as a test for predicting ALL using a certain CCND3 cutoff value for classification.
+
+-   For gene expression values larger than a certain cutoff we declare the the positive in the sense of indicating ALL.
+
+-   Suppose that $x_i$ is a gene expression value of the $i$-th individual and $t$ is some threshold.
+
+-   The true and fales positives can be computed for each possible cutoff value - which is how a ROC curve is calculated.
+
+> 아!!!!
+>
+> AUC 값는 하나의 cutoff에 대한 예측 성능을 평가 하는 것이 아니다!!
+>
+> 특정 gene(CCND3)이 ALL, AML을 잘 예측 하는 지를 평가하는 것!
+>
+> 특정 gene이 가질 수 있는 모든 cutoff를 이용해서 그림을 그린 것이 ROC curve이다!
+
+### Example of Classification
+
+```{r}
+data(golub, package = "multtest")
+
+Labels = factor(golub.cl, levels = 0:1, labels = c("ALL", "AML"))
+
+ccnd3 = grep("CCND3", golub.gnames[,2], ignore.case = TRUE)
+
+sort(golub[ccnd3, ])
+
+decision = golub[ccnd3, ] >= 1.27 # 
+
+decision # TRUE = positive(ALL), FALSE = negative(AML)
+
+Pred = factor(decision, levels = c("TRUE", "FALSE"),
+                        labels = c("ALL", "notALL"))
+
+data.frame(predict = Pred, labels = Labels)
+
+table(Pred, Labels)
+```
+
+```{r}
+perf <- function(pred, label) {
+  tab <- table(pred, label)
+  sensitivity <- tab[1, 1]/sum(tab[ ,1])
+  specificity <- tab[2, 2]/sum(tab[ ,2])
+  PV.positive <- tab[1, 1]/sum(tab[1, ])
+  PV.negative <- tab[2, 2]/sum(tab[2, ])
+  c(sensitivity, specificity, PV.positive, PV.negative)
+}
+perf(Pred, Labels)
+```
+
+```{r}
+decision2 = golub[ccnd3, ] >= 2.18
+Pred2 = factor(decision2, levels = c("TRUE", "FALSE"), labels = c("ALL", "notALL"))
+perf(Pred2, Labels)
+```
+
+-   지금 cutoff 값을 높혔다.
+
+-   그럼 True보다 false가 많아질 것이다.
+
+-   즉, false라고 예측한 비율이 높아질거다.
+
+-   그럼 spec (= 진짜 false 중에서 false라고 예측한 ratio)는 당연히 높아질것이다.
+
+```{r}
+decision3 = golub[ccnd3, ] >= 0.8
+Pred3 = factor(decision3, levels = c("TRUE", "FALSE"), labels = c("ALL", "notALL"))
+perf(Pred3, Labels)
+```
+
+-   이제 이 gene에서 가능한 모든 cutoff를 이용해서 이 gene ALL, not ALL를 예측하기 좋은 classifier인지 검증해보자.
+
+```{r}
+cutoff = sort(golub[ccnd3, ])
+cutoff = c(cutoff, Inf)
+cutoff
+```
+
+```{r}
+res = matrix(0, length(cutoff), 4) # 4 -> sen, spec ,pv+, pv-
+rownames(res) = round(cutoff, 3)
+colnames(res) = c("sensitivity", "specificity", "PV.positive", "PV.negative")
+
+for (i in 1:length(cutoff)){
+  decision = golub[ccnd3, ] > cutoff[i]
+  Pred = factor(decision, levels = c("TRUE", "FALSE"), labels = c("ALL", "notALL"))
+  res[i, ] = perf(Pred, Labels)
+}
+
+head(res);tail(res)
+```
+
+```{r}
+plot(1-res[,2], res[,1], type="l", xlab="False postive rate",
+ylab="True postive rate", col="blue", lwd=3)
+```
+
+-   이제 이 곡선의 아래 면적을 구하면 CCND라는 gene이 classifier로 얼마나 좋은 성능을 보여주는지 알 수 있다.
+
+### Example of ROC Curve.
+
+```{r}
+library(ROCR)
+
+true = factor(golub.cl , levels = 0:1, labels = c("TRUE", "FALSE"))
+
+predccnd3 = prediction(golub[ccnd3,], true)
+```
+
+-   `prediction()` 함수(ROCR 패키지)는 **예측 점수(혹은 확률, 연속형 값)와 실제 라벨**을 받아서,\
+
+    ROC, PR 곡선, AUC 등 각종 성능평가 지표를 \*\*만들기 위한 내부 데이터 구조(객체)\*\*를 생성하는 역할을 한다.
+
+-   **입력**
+
+    -   첫 번째 인자: **예측 점수**\
+
+        (여기서는 `golub[ccnd3, ]`, 즉 각 샘플의 CCND3 유전자 발현값)
+
+    -   두 번째 인자: **정답 라벨**\
+
+        (`true` = ALL/AML 클래스, TRUE/FALSE로 인코딩됨)
+
+    **출력**
+
+    -   ROCR 내부에서 이후 `performance()` 함수로 ROC 곡선, AUC, PR curve 등 다양한 성능 곡선을 계산할 수 있는 **prediction 객체**를 만듭니다.
+
+        이 객체는 모든 threshold를 시뮬레이션 할 수 있도록 점수와 라벨을 잘 정렬해 저장합니다.
+
+```{r}
+perfccnd3 = performance(predccnd3, "tpr", "fpr")
+plot(perfccnd3, lwd = 3, col = 'blue')
+```
+
+```{r}
+slotNames(perfccnd3)
+
+# Cut off
+list(perfccnd3@alpha.name, perfccnd3@alpha.values)
+sort(cutoff, decreasing=TRUE)
+
+# False postive rate
+list(perfccnd3@x.name, perfccnd3@x.values)
+sort(as.numeric(1-res[,2])) # 1 -fpr = spec
+
+# True postive rate(sen)
+list(perfccnd3@y.name, perfccnd3@y.values)
+sort(as.numeric(res[,1]))
+```
+
+### 이게 중요!!!!
+
+```{r}
+# value of AUC
+performance(predccnd3, "auc")@y.values
+```
+
+-   0.956으로 1에 매우 가까운 값!
+
+-   즉, CCND3 gene은 ALL, not ALL를 나눈데 큰 역할을 하는 classifier이다..!
+
+-   이번에는 Gdf5 gene으로 해볼까??
+
+```{r}
+gdf5 = grep('GDF5', golub.gnames[, 2], ignore.case = TRUE)
+true = factor(golub.cl , levels = 0:1, labels = c("TRUE", "FALSE"))
+predgdf5 = prediction(golub[gdf5, ], true)
+perfgdf5 = performance(predgdf5, "tpr", "fpr")
+plot(perfgdf5, lwd = 4, col = 'magenta')
+performance(predgdf5, "auc")@y.values
+```
+
+-   In fact, this GDF5 expression classifer is performing worse than random guessing.
+
+```{r}
+true2 <- factor(golub.cl, levels=0:1, labels=c("FALSE", "TRUE"))
+predgdf5 <- prediction(golub[gdf5, ], true2)
+perfgdf5 <- performance(predgdf5, "tpr", "fpr" )
+performance(predgdf5, "auc")@y.values
+```
+
+-   그럼 Gdf5 gene은 AML(not ALL)의 biomarker라고 할 수 있다..!!
+
+## Classification Probability
+
+-   Given a feature vector $X$ and qualitative response $Y$ (label : 1, 2, 3, 4..) taking values in the set $C$, the classification task is to build a function $C(X)$ that takes as input feature vector $X$ and predicts it values for $Y$.
+
+-   Often we are more interested in estimating the prob that $X$ belongs to each category in $C$/
+
+-   Suppose that we have only 2 classes such as "Positive" and "Negative".
+
+-   Then, we just need to compare two probs,
+
+$$
+P(Y = +, |  X = x) \quad P(Y = - ,|X = X)
+$$
+
+-   Equivalently, we just need to know if
+
+$$
+P(Y =  +, |X=x) > 0.5
+$$
+
+-   In general, $Y$ is a "Positive if
+
+$$
+P(Y = +, | X = x) > \alpha
+$$
+
+## Logisitc Regression
+
+![](images/clipboard-2556945691.png)
+
+![](images/clipboard-3071465891.png)
+
+### Example of Logistic Regression
+
+```{r}
+data(golub, package = "multtest")
+Factor = factor(golub.cl, levels = 0:1, labels = c("ALL", "AML"))
+ccnd3 = grep("ccnd3", golub.gnames[,2], ignore.case = TRUE)
+
+head(data.frame(x = golub[ccnd3, ], y = Factor));tail(data.frame(x = golub[ccnd3, ], y = Factor))
+```
+
+```{r}
+g = glm(Factor ~ golub[ccnd3, ], family = 'binomial')
+summary(g)
+```
+
+```{r}
+predict(g) # value of linear predictors,  # η = logit(π̂)
+```
+
+![](images/스크린샷 2025-06-13 14.31.38.png)
+
+![](images/clipboard-2347516603.png)
+
+```{r}
+eta = cbind(1, golub[ccnd3, ]) %*% g$coef
+head(data.frame(pred = predict(g), eta))
+```
+
+```{r}
+prob1 = predict(g, type = "response") # # π̂ = expit(η)
+prob1
+```
+
+```{r}
+prob2 = exp(eta) / (1 + exp(eta))
+prob3 = exp(predict(g)) / (1 + exp(predict(g)))
+
+head(data.frame(x = golub[ccnd3, ], pred1 = prob1, pred2 = prob2, pred3 = prob3))
+```
+
+```{r}
+tail(data.frame(x = golub[ccnd3, ], pred1 = prob1, pred2 = prob2, pred3 = prob3))
+```
+
+-   현재 데이터 프레임에서 보이는 확률 값은 AML (level = 1)일 확률을 말하고 있다.
+
+```{r}
+pred = predict(g, type = "response") < 0.5 # 0.5 보다 작으면 ALL, 크면 AML!!
+
+est = factor(pred, levels = c(TRUE, FALSE), labels = c("ALL", "notALL"))
+
+head(data.frame(pred = est, Labele = Factor));tail(data.frame(pred = est, Labele = Factor))
+```
+
+```{r}
+table(est, Factor)
+```
+
+```{r}
+perf(est, Factor)
+```
+
+```{r}
+# 정리
+data(golub, package = "multtest")
+
+Factor = factor(golub.cl, levels = 0:1, labels = c("ALL", "AML"))
+
+ccnd3 = grep("ccnd3", golub.gnames[,2], ignore.case = TRUE)
+
+g = glm(Factor ~ golub[ccnd3, ], family = 'binomial')
+
+pred = predict(g, type = "response") < 0.5
+
+est = factor(pred, levels = c(TRUE, FALSE), labels = c("ALL", "notALL"))
+
+table(est, Factor)
+```
+
+![](images/clipboard-3830230090.png)
+
+### ROC Curve rr
+
+```{r}
+library(ROCR)
+true = factor(golub.cl, levels = 0:1, labels = c("FALSE", "TRUE"))
+yprob = predict(g, type = "response")
+
+pred = prediction(yprob, true)
+perf_ = performance(pred, "tpr", "fpr")
+plot(perf_, lwd = 2, col= "blue")
+```
+
+![](images/clipboard-926379820.png)
+
+```{r}
+performance(pred, "auc")@y.values
+```
+
+## Training Sets and Test Sets

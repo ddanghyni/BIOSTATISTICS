@@ -6,6 +6,7 @@ library(ape)
 library(SNPassoc)
 library(genetics)
 
+
 # The Z-test --------------------------------------------------------------
 
 data(golub, package = "multtest")
@@ -26,7 +27,7 @@ z.value = sqrt(n) * (mean(x) - mu0) / sigma
 
 Gdf5 = grep('Gdf5', golub.gnames[,2], ignore.case = TRUE)
 
-x = golub(Gdf5, golubFactor = 'ALL')
+x = golub[Gdf5, golubFactor == 'ALL']
 mu0 = 0
 n = 27
 t.value = sqrt(n) * (mean(x) - mu0) / sd(x)
@@ -155,7 +156,7 @@ library(outliers)
 grubbs.test(golub[ccnd3, golubFactor == 'ALL'])
 grubbs.test(golub[ccnd3, golubFactor == 'AML'])
 
-grubbs.test(golub[zyxin, golubFactor == 'ALL']) # 이상치가 아니다!!
+grubbs.test(golub[zyxin, golubFactor == 'ALL']) # 이상치가 없다!
 grubbs.test(golub[zyxin, golubFactor == 'AML'])
 
 
@@ -389,69 +390,45 @@ text(abs(tobs2)+1, 350, col=4, paste("|T| = ", round(abs(tobs2), 4), sep=""))
 
 # Confidence Interval -----------------------------------------------------
 
+t.test(golub[ccnd3,]) # default mu=0
+# pv 존나 작다-> H_0기각 -> mu가 신뢰구간에 당연히 포함 x
+t.test(golub[ccnd3,])$conf.int
 
+t.test(golub[ccnd3,], mu=1.27)$p.value 
+t.test(golub[ccnd3,], mu=1.277)$p.value
 
+t.test(golub[ccnd3,], conf.level=0.90)$conf.int 
+t.test(golub[ccnd3,], mu=1.74)$p.val 
+t.test(golub[ccnd3,], mu=1.741)$p.val
 
+# Bootstrap Confidence Interval -------------------------------------------
 
+1:10 
+sample(1:10, replace=TRUE) # replace = TRUE !!! => Bootstrap
+sample(1:10, replace=TRUE)
 
+set.seed(1111) 
+sample(1:10, replace=TRUE)
 
+k = 10000
 
+mat = matrix(golub[ccnd3, ], length(golub[ccnd3, ]), k)
 
+fun3 = function(t) sample(t, replace = TRUE)
 
+boot = apply(mat, 2, fun3)
 
+bmean = apply(boot, 2, mean)
 
+quantile(bmean, c(0.025, 0.975))
 
 
 
+# Wilcoxon signed rank test -----------------------------------------------
 
+x <- c(6003, 6304, 6478, 6245, 6134, 6204, 6150) 
+wilcox.test(x, mu=6000)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+nkr <- grep("Nkr", golub.gnames[, 2], ignore.case=TRUE) 
+shapiro.test(golub[nkr, golubFactor=="ALL"]) # 정규성 안따르노 ㅋㅎ
+shapiro.test(golub[nkr, golubFactor=="AML"]) # 정규성 따른다.
