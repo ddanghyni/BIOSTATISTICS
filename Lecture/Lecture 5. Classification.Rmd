@@ -475,3 +475,207 @@ apply(miss , 2, summary)
 ```
 
 ## Classification Trees
+
+![](images/clipboard-2797569038.png)
+
+-   A training set is used to estimate the threshold values that construct the tree.
+
+![](images/clipboard-168704615.png)
+
+-   When many predictor variables are involved, say 3051, then we have a teemendous gene(variable) selection problem.
+
+> `rpart()` -\> 자동으로 해줌!
+
+### Example of Classification Trees
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+n = 10
+factor = factor(c(rep(1, n), rep(2, n), rep(3, n)))
+levels(factor) = c("ALL", "ALL2", "AML")
+factor
+```
+
+```{r}
+set.seed(123)
+geneA <- c(rnorm(n, 0, 0.5), rnorm(n, 2, 0.5),
+            rnorm(n, 4, 0.5))
+```
+
+```{r}
+tapply(geneA, factor, range)
+```
+
+```{r}
+boxplot(geneA ~ factor, cex.lab=1.5, main=NULL, boxwex=0.3,
+col=c("lightblue", "orange", "lightgreen"),
+xlab="Type of leukemia", ylab="Gene expression")
+```
+
+```{r}
+data = data.frame(factor, geneA)
+
+rpartfit = rpart(factor ~ geneA, method = "class", data = data)
+
+prp(rpartfit, branch.lwd=4, branch.col="darkgreen", extra=101)
+```
+
+```{r}
+rpartfit
+```
+
+### Example of Classification Trees : Gene Selection
+
+```{r}
+set.seed(123)
+geneA <- c(rnorm(20, 0, 0.5), rnorm(10, 2, 0.5))
+geneB <- c(rnorm(10, 0, 0.5), rnorm(20, 2, 0.5))
+geneC <- c(rnorm(30, 1, 0.5))
+data <- data.frame(factor, geneA, geneB, geneC)
+data
+```
+
+```{r}
+par(mfrow=c(1,3))
+boxplot(geneA ~ factor, main="Gene A", boxwex=0.3, ylab="",
+col=c("lightblue", "orange", "lightgreen"), xlab="")
+boxplot(geneB ~ factor, main="Gene B", boxwex=0.3, ylab="",
+col=c("lightblue", "orange", "lightgreen"), xlab="")
+boxplot(geneC ~ factor, main="Gene C", boxwex=0.3, ylab="",
+col=c("lightblue", "orange", "lightgreen"), xlab="")
+```
+
+```{r}
+tapply(geneA, factor, range)
+tapply(geneB, factor, range)
+tapply(geneC, factor, range)
+```
+
+```{r}
+rpartFit = rpart(factor ~ geneA + geneB + geneC, method = 'class', data = data)
+
+prp(rpartFit, branch.lwd=4, branch.col="blue", extra=101)
+```
+
+-   Gene C는 분류를 할 때 전혀 이용되지 않았다!
+
+### Example of Classification Trees : Classification by CCND3
+
+```{r}
+data(golub, package = 'multtest')
+golubFactor = factor(golub.cl, levels = 0:1, labels = c("ALL", "AML"))
+ccnd3 = grep("CCND3", golub.gnames[, 2], ignore.case = TRUE)
+```
+
+```{r}
+boxplot(golub[ccnd3, ] ~ golubFactor, main="", boxwex=0.3,
+col=c("lightblue", "orange"), xlab="Type of patients",
+      ylab="Cyclin D3 gene expression")
+```
+
+-   대충 boxplot를 보면 CCND3는 ALL과 AML를 잘 classification 해주는 classifier가 될 듯??!?!
+
+```{r}
+tapply (golub[ccnd3, ], golubFactor, range)
+```
+
+```{r}
+gene = golub[ccnd3, ]
+
+tree = rpart(golubFactor ~ gene, method = "class")
+
+prp(tree, branch.lwd=4, branch.col="blue", extra=101)
+```
+
+-   Note that $(25 + 10) / 38 = 0.921$ of the ALL, AML patients are correctly classified by CCND3 gene expression.
+
+```{r}
+predict(tree, type = 'prob')
+```
+
+```{r}
+predict(tree, type = "class")
+```
+
+```{r}
+pred = predict(tree, type = "class")
+data.frame(pred = pred, golub=golubFactor)[c(17, 21, 29),]
+```
+
+-   Hence, patients 17 and 21 are erroneously predicted as AML and patient 29 is erroneously predicted to be in the ALL class.
+
+```{r}
+table(pred, golubFactor)
+```
+
+```{r}
+perf(pred, golubFactor)
+```
+
+```{r}
+library(ROCR)
+true <- factor(golub.cl, levels=0:1, labels=c("TRUE","FALSE"))
+pred_ALL = predict(tree, type = 'prob')[,1]
+
+pred <- prediction(pred_ALL, true)
+# prediction에 확률값 들어가야한다!
+
+perf <- performance(pred, "tpr", "fpr" )
+plot(perf, lwd=2, col="blue")
+```
+
+```{r}
+performance(pred, "auc")@y.values
+```
+
+### Example of Classification Trees : leukemia data
+
+```{r}
+library(ALL)
+data(ALL)
+```
+
+```{r}
+ALLB123 <- ALL[ ,ALL$BT %in% c("B1","B2","B3")]
+ALLB123$BT
+table(ALLB123$BT)
+table(ALL$BT)
+names = featureNames(ALL)
+```
+
+```{r}
+library(hgu95av2.db)
+symb <- mget(names, env=hgu95av2SYMBOL)
+#unlist(symb)
+#unlist(symb)[1:100]
+ALLBTnames <- ALLB123[names, ]
+dim(ALLBTnames)
+dim(ALL)
+probeData <- as.matrix(exprs(ALLBTnames))
+row.names(probeData) <- unlist(symb)
+probeData[1:20, 1:5]
+```
+
+#### Select the gene with an ANOVA $p$-value smaller than 0.00001
+
+```{r}
+dim(ALL)
+
+fun = function(x) anova(lm(x ~ ALLB123$BT))$Pr[1]
+
+dim(exprs(ALLB123))
+
+anova.pValue = apply(exprs(ALLB123), 1, fun)
+
+ww = anova.pValue < 0.00001
+
+sum(ww)
+```
+
+```{r}
+diagnosed = factor(ALLBTnames$BT)
+```
