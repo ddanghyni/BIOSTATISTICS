@@ -602,6 +602,16 @@ predict(tree, type = "class")
 ```
 
 ```{r}
+# 내가 만든 모델에 새로운 테스트값 넣는 방법!
+# new_data의 컬럼명이 반드시 모델을 만들때 정의 했던 
+# 컬럼명이랑  같아야한다.
+new_data = data.frame(gene = c(1 ,2 ,3, 4))
+
+predict(tree, new_data, type = 'class')
+predict(tree, new_data, type = 'prob')
+```
+
+```{r}
 pred = predict(tree, type = "class")
 data.frame(pred = pred, golub=golubFactor)[c(17, 21, 29),]
 ```
@@ -618,11 +628,11 @@ perf(pred, golubFactor)
 
 ```{r}
 library(ROCR)
-true <- factor(golub.cl, levels=0:1, labels=c("TRUE","FALSE"))
-pred_ALL = predict(tree, type = 'prob')[,1]
+true <- factor(golub.cl, levels=0:1, labels=c("TRUE","FALSE")) # ALL을 TRUE로
+pred_ALL = predict(tree, type = 'prob')[,1] # ALL의 확률을 들고와야한다.
 
-pred <- prediction(pred_ALL, true)
 # prediction에 확률값 들어가야한다!
+pred <- prediction(pred_ALL, true)
 
 perf <- performance(pred, "tpr", "fpr" )
 plot(perf, lwd=2, col="blue")
@@ -639,23 +649,40 @@ library(ALL)
 data(ALL)
 ```
 
+-   The ALL data consists of microarray assays for 12,625 genes from 128 different individuals with either B-cell or T-cell acute lymphoblastic leukemia.
+
+-   We predict the diagnosis of B-cell state B1, B2 or B3 from gene expressions.
+
 ```{r}
 ALLB123 <- ALL[ ,ALL$BT %in% c("B1","B2","B3")]
+
 ALLB123$BT
-table(ALLB123$BT)
+
+table(ALLB123$BT) # B1, B2, B3만 뽑은거 sample 128 -> 78
+
 table(ALL$BT)
+
 names = featureNames(ALL)
 ```
 
 ```{r}
 library(hgu95av2.db)
+
 symb <- mget(names, env=hgu95av2SYMBOL)
+
 #unlist(symb)
 #unlist(symb)[1:100]
+
 ALLBTnames <- ALLB123[names, ]
-dim(ALLBTnames)
+
+dim(ALLBTnames) # B1, B2, B3만 뽑은거 sample 128 -> 78 
+
 dim(ALL)
+
 probeData <- as.matrix(exprs(ALLBTnames))
+
+dim(probeData)
+
 row.names(probeData) <- unlist(symb)
 probeData[1:20, 1:5]
 ```
@@ -671,11 +698,289 @@ dim(exprs(ALLB123))
 
 anova.pValue = apply(exprs(ALLB123), 1, fun)
 
+length(anova.pValue) # 12625개의 pv 계산 
+
 ww = anova.pValue < 0.00001
 
-sum(ww)
+sum(ww) # 82개의 gene이 selected
 ```
+
+-   이제 선택된 82개의 gene들이 diagnoesed를 얼마나 잘분류하는지 보자!
 
 ```{r}
 diagnosed = factor(ALLBTnames$BT)
+```
+
+```{r}
+Data = data.frame(t(probeData[ww,]))
+dim(Data)
+```
+
+```{r}
+fit = rpart(diagnosed ~ ., data = Data) # ~. -> 다 쓰겠다!
+prp(fit, branch.lwd=4, branch.col="blue", extra=101)
+```
+
+```{r}
+fit
+```
+
+-   모델 평가 ㄱㄱ
+
+```{r}
+pred = predict(fit, type = 'class')
+table(pred, diagnosed)
+```
+
+```{r}
+library(caret)
+
+confusionMatrix(pred, diagnosed)
+```
+
+![](images/스크린샷 2025-06-14 12.45.55.png)
+
+```{r}
+library(caret)
+
+# 혼동행렬 직접 입력
+mat = matrix(c(17,2,0,
+               1,33,5,
+               1,1,18), nrow=3, byrow=TRUE)
+
+# factor 레벨 지정
+rownames(mat) = colnames(mat) = c("B1", "B2", "B3")
+
+# confusionMatrix 계산
+confusionMatrix(as.table(mat))
+```
+
+```{r}
+prob = predict(fit, tpye = 'prob')
+
+out = data.frame(prob, predicted = pred, diagnosis = diagnosed)
+
+out[1:10, ]
+
+out[pred != diagnosed, ] # 오분류된 놈들 출력.
+```
+
+```{r}
+#B1 vs (B2 + B3)로 ROC 커브 그리기
+
+library(ROCR)
+diagnosed_binary <- factor(diagnosed == "B1", levels = c(FALSE, TRUE), labels = c(FALSE, TRUE))
+
+
+pred_B1 = predict(fit, type = 'prob')[,1] # B1의 확률을 들고와야한다.
+
+# prediction에 확률값 들어가야한다!
+pred <- prediction(pred_B1, diagnosed_binary)
+
+perf <- performance(pred, "tpr", "fpr" )
+plot(perf, lwd=2, col="blue")
+performance(pred, "auc")@y.values
+```
+
+## Classification Trees for Test Sets
+
+### Example: Separate training and test sets.
+
+-   당연히 트리 모델을 구축하고 그걸 test하는 데이터의 변수는 같아야겠지?
+
+-   그러니깐 sample (factor)을 split하는 거고.,,
+
+```{r}
+set.seed(123)
+
+train = sample(1:78, 39, replace = TRUE)
+
+test = setdiff(1:78, train)
+
+table(diagnosed[train])
+
+table(diagnosed[test])
+```
+
+#### Train Model
+
+```{r}
+fit.tr = rpart(diagnosed ~ . , data = Data, subset = train)
+prp(fit.tr, branch.lwd=4, branch.col="blue", extra=101)
+```
+
+```{r}
+train_pred = predict(fit.tr, Data[train, ], type = "class")
+confusionMatrix(train_pred, diagnosed[train])
+```
+
+```{r}
+table(train_pred, diagnosed[train])
+mean(train_pred != diagnosed[train])
+1-0.9744
+```
+
+#### Test Model
+
+```{r}
+test_pred = predict(fit.tr, Data[test, ], type = 'class')
+confusionMatrix(test_pred, diagnosed[test])
+```
+
+```{r}
+table(test_pred, diagnosed[test])
+mean(test_pred != diagnosed[test])
+1 - 0.5686
+```
+
+## Bagging
+
+![](images/clipboard-149245378.png)
+
+### Example of Random Forest
+
+```{r}
+library(ALL)
+data(ALL)
+```
+
+```{r}
+ALLB123 <- ALL[ ,ALL$BT %in% c("B1","B2","B3")]
+names <- featureNames(ALL)
+ALLBTnames <- ALLB123[names, ]
+probeData <- as.matrix(exprs(ALLBTnames))
+fun <- function(x) anova(lm(x ~ ALLB123$BT))$Pr[1]
+anova.pValue <- apply(exprs(ALLB123), 1, fun)
+ww <- anova.pValue < 0.00001
+diagnosed <- factor(ALLBTnames$BT)
+Data <- data.frame(t(probeData[ww, ]))
+set.seed(123)
+train <- sample(1:78, 39, replace=FALSE)
+test <- setdiff(1:78, train)
+```
+
+```{r}
+library(randomForest)
+
+x_train = Data[train, ]
+x_test = Data[test, ]
+y_train = diagnosed[train]
+y_test = diagnosed[test]
+```
+
+```{r}
+randF_1 = randomForest(x = x_train, y = y_train , xtest = x_test, ytest = y_test,
+                       ntree = 1000, mtry = 1)
+
+randF_1$test$confusion
+
+rf1.conf = randF_1$test$confusion[1:3, 1:3]
+
+1 - sum(diag(rf1.conf)) / sum(rf1.conf)
+```
+
+```{r}
+1 - 0.8462
+confusionMatrix(randF_1$test$predicted, diagnosed[test])
+```
+
+```{r}
+rf2 <- randomForest(x=x_train, y=y_train, xtest=x_test, ytest=y_test,
+ntree=1000, mtry=3)
+rf2.conf <- rf2$test$confusion[1:3, 1:3]
+1- sum(diag(rf2.conf))/sum(rf2.conf)
+```
+
+```{r}
+rf3 <- randomForest(x=x_train, y=y_train, xtest=x_test, ytest=y_test,
+ntree=1000, mtry=5)
+rf3.conf <- rf3$test$confusion[1:3, 1:3]
+1- sum(diag(rf3.conf))/sum(rf3.conf)
+```
+
+```{r}
+rf4 <- randomForest(x=x_train, y=y_train, xtest=x_test, ytest=y_test,
+ntree=1000, mtry=10)
+rf4.conf <- rf4$test$confusion[1:3, 1:3]
+1- sum(diag(rf4.conf))/sum(rf4.conf)
+```
+
+## Support Vector Machine
+
+![](images/스크린샷 2025-06-14 13.54.26.png)
+
+![](images/스크린샷 2025-06-14 13.54.45.png)
+
+![](images/스크린샷 2025-06-14 13.55.17.png)
+
+![](images/스크린샷 2025-06-14 13.55.40.png)
+
+![](images/스크린샷 2025-06-14 13.56.04.png)
+
+```{r}
+library(e1071)
+
+Data = data.frame(t(probeData[ww, ]), y = diagnosed)
+
+dim(Data)
+```
+
+```{r}
+svmfit = svm(y ~ . , data = Data[train, ], kernel = "linear")
+summary(svmfit)
+```
+
+![](images/스크린샷 2025-06-14 13.59.38.png)
+
+```{r}
+pred.tr = predict(svmfit, Data[train, ])
+confusionMatrix(pred.tr, Data[train, "y"])
+```
+
+```{r}
+pred.te = predict(svmfit, Data[test , ])
+confusionMatrix(pred.te, Data[test, "y"])
+```
+
+```{r}
+1 - 0.7949
+mean(pred.te != Data[test, "y"])
+```
+
+```{r}
+fit1 <- svm(y~., data=Data[train, ], cost=0.001, kernel="linear")
+fit2 <- svm(y~., data=Data[train, ], cost=0.01, kernel="linear")
+fit3 <- svm(y~., data=Data[train, ], cost=0.1, kernel="linear")
+fit4 <- svm(y~., data=Data[train, ], cost=10, kernel="linear")
+```
+
+```{r}
+pred.te <- predict(fit1, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+pred.te <- predict(fit2, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+pred.te <- predict(fit3, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+pred.te <- predict(fit4, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+```
+
+```{r}
+fit5 <- svm(y~., data=Data[train, ], cost=10, degree=3,
+kernel="polynomial")
+pred.te <- predict(fit5, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+fit6 <- svm(y~., data=Data[train, ], cost=1, kernel="radial")
+pred.te <- predict(fit6, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
+fit7 <- svm(y~., data=Data[train, ], cost=1, kernel="sigmoid") # best model
+pred.te <- predict(fit7, Data[test, ])
+table(pred.te, Data[test, "y"])
+mean(pred.te != Data[test, "y"])
 ```
